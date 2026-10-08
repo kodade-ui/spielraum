@@ -17,7 +17,9 @@ self.addEventListener('activate', event => event.waitUntil((async () => {
 self.addEventListener('fetch', event => {
   if(event.request.method !== 'GET' || new URL(event.request.url).origin !== location.origin) return;
   if(event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request).catch(async () => await caches.match('./index.html') || Response.error()));
+    // Auch bei Server-Fehlern (z. B. 404, wenn das Hosting ausfällt) die gespeicherte App zeigen,
+    // damit Backup und Daten erreichbar bleiben.
+    event.respondWith(fetch(event.request).then(async response => response.ok ? response : (await caches.match('./index.html')) || response).catch(async () => await caches.match('./index.html') || Response.error()));
     return;
   }
   const path = new URL(event.request.url).pathname;
