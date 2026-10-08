@@ -1,0 +1,102 @@
+Übergabepaket geprüft: 2026-10-06T18:58:52.214019+00:00
+Node: v24.19.0
+Nur Fachtests, synthetische UI-Abläufe und technische Prüfungen; keine physische Handy-/visuelle Abnahme.
+Eine npm-Warnung zur Umgebungsoption http-proxy betrifft die Testumgebung.
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> spielraum-claude-handoff@2.12.0 test
+> node tools/test.mjs
+
+✔ Actual purchases are isolated from recurring planning and reserves, totals reconcile per month (22.656866ms)
+✔ Marking an existing expense as a pot contribution keeps free budget unchanged and preserves previous months (1.69312ms)
+✔ Payment days clamp to short months; annual provisions and missing days stay undated (1.372349ms)
+✔ Amounts preserve cents with German grouping and mobile decimal dots (1.796244ms)
+✔ Monthly and annual recurrences handle leap years and inclusive ends (13.994474ms)
+✔ Budget, actual flow and planned costs stay distinct; skips apply to one occurrence (1.303133ms)
+✔ Backup validation rejects invalid money, dates and missing categories (1.919263ms)
+✔ Wishes do not change the budget; goals survive backup and validate references and money (6.545286ms)
+✔ Existing contributions, withdrawals and corrections feed deadline rate without double counting money (12.675726ms)
+✔ Completed goals release a pot but cannot be reopened into duplicate allocation (1.389204ms)
+✔ Category upgrade preserves all financial inputs, custom names and colors; reruns do not resurrect deleted defaults (6.665596ms)
+✔ Names, German keywords, custom categories and deliberate corrections drive suggestions (4.150057ms)
+✔ Day model reserves fixed costs and savings immediately; month end agrees exactly, also leap months and deficits (1.853725ms)
+✔ Comparison never fabricates history and snapshots remain frozen after later edits (14.678771ms)
+✔ Analysis uses user targets and actual totals, while savings pie preserves separate purposes (21.09853ms)
+✔ Partial payments and checkoff record only the outstanding amount, once, without altering planning (19.725191ms)
+✔ Months remain independent; deleting a payment reopens its amount and overspending stays visible (2.120253ms)
+✔ Annual monthly provisions, skips, inactive entries, bad dates and closed periods are handled explicitly (3.017256ms)
+✔ Every planned expense counts immediately, independent of day; charts and future months update (4.416586ms)
+✔ Annual amounts are monthly provisions; one-off costs only count in their month (0.545763ms)
+✔ Recurring edits and deletions preserve past months; one-month edits preserve later months (1.124415ms)
+✔ V1 migration retains notes, categories, skips and all expenses including future dated ones, without doubling income (1.184354ms)
+✔ Over-budget plans have no negative pie slices; annual fractional-cent items stay editable (0.511065ms)
+✔ Amounts and backups validate before any persistence (0.952343ms)
+✔ Deleting an expense also removes its already scheduled future price revisions (0.340863ms)
+✔ Shared schedule allocates each euro once, releases capacity and never modifies its source (43.748189ms)
+✔ Fixed deadlines precede priority; protected capital and future corrections cannot fund a goal twice (32.051616ms)
+✔ Only explicitly released savings are replaced; prior months and edited adopted posts remain protected (38.72217ms)
+✔ Inverse price search returns exact affordable ceiling, only changes allowed inputs and saves isolated drafts (15.190285ms)
+✔ Delay uses actual saving growth; explicit pause resumes at the right month; zero permission changes no savings (7.50033ms)
+✔ CSV handles quoted delimiters, line breaks, German cents, foreign currency and duplicate review (4.984702ms)
+✔ Learning, transfers and plan matching stay separate from consumption and avoid double deductions (3.367327ms)
+✔ Closing requires completeness, carries confirmed cash once, records allocation and supports protected reversal (3.878301ms)
+✔ Separate debit/credit imports and malformed additions validate before changing any stored plan (3.027132ms)
+✔ Goal purchase: partial reserve funding counts once, inspection is read-only, adoption round-trips and reverses safely (23.223306ms)
+✔ Purchase constraints reject double funding, missing pots, closed months and unsafe adoption; later date uses real pot growth (22.670991ms)
+✔ Plan-change explanation reconciles exactly through recurrence, revisions and withdrawals (1.60224ms)
+✔ Quarterly charges occur in full every third month across years, respect end and skip, and survive backup (8.629793ms)
+✔ Revisions in intermediate months retain the original quarterly phase and past amounts (2.431787ms)
+✔ Quarterly pot deposits accrue only in payment months and annual provisions remain monthly (1.285599ms)
+✔ Reconciliation starts with income separately from pot withdrawals and combines recorded, reserved and open amounts (1.92476ms)
+✔ Separate income sources fund one consistent allocation; payment moves open to spent without changing free money (10.967622ms)
+✔ Empty, zero-income, deficit and overspent months produce explicit finite graphics (24.380944ms)
+✔ Old and new actuals stay linked across amount, title, category and one-month revisions without duplicate payment (11.258572ms)
+✔ Fixed and variable open totals honor category defaults and item overrides, without changing money (1.765015ms)
+✔ New annual payments occur in full only every twelve months, keep their phase on edits and support dates, skips and end (3.444449ms)
+✔ Legacy annual review preserves earlier monthly shares and actual records; converted pot movements occur only when due (2.531313ms)
+✔ Annual scenario preview, adoption, backup and undo share payment-month semantics (2.900996ms)
+✔ Initial capital never inflates income; future recurring deposits count once in both views (5.615635ms)
+✔ One-off and recurring withdrawals free monthly budget without double booking (2.472702ms)
+✔ Changes, month exclusions, end dates and deletions immediately adjust projected pots, preserve prior months (2.401157ms)
+✔ Manual correction is a new starting point and does not modify earlier months or cashflow (12.036875ms)
+✔ Linking an existing saving does not create a second expense; backup validation preserves pots (2.990065ms)
+✔ Multiple starting months, annual monthly provisions and deficits reconcile with the total (2.541539ms)
+✔ Withdrawal does not suppress the inherited budget allowance (1.05097ms)
+✔ Additional scenario income cannot silently replace an inherited monthly allowance (6.689988ms)
+✔ Draft scenarios and backups leave real planning unchanged; funded purchase counts once and delays goals (9.186832ms)
+✔ Removing revised recurring series preserves history, supports overlapping selections and yearly costs (4.952643ms)
+✔ Stress test honors month, top funding and thresholds, including existing baseline shortfalls (8.236987ms)
+✔ Adoption matches preview, forbids duplicate adoption, survives reload and rolls back only its changes (11.64303ms)
+✔ Rollback stops on edited entries, new monthly exceptions or altered related revisions (1.75153ms)
+✔ Broken references are repairable drafts but cannot simulate or adopt; malformed journals are rejected (1.335342ms)
+ℹ tests 62
+ℹ suites 0
+ℹ pass 62
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 312.354316
+PASS: direct add/edit/delete/undo; live form projection; annual payment in full; pie/ring rendering; demo isolation; escaping; restore validation; storage failure preservation; optional navigation tool with API stub.
+PASS: automatic browser-state migration keeps the original V1 value and immediately includes a future-dated expense.
+PASS: update backup is byte-identical; original items retained; inline category preserves draft; type switch preserves amount; reviewed assignments; removed analysis navigation; upgrade failure preserves stored original.
+PASS: reserves update keeps original data and backup; pot creation, deposit, withdrawal, correction and undo reconcile; linked-pot deletion blocked; restore retains balances.
+PASS: inline pot from expense; immediate linked projection; payment ledger; actual expense add/edit/delete/undo; separate budget and pot totals; custom categories; category deletion protection; save failure retains data.
+PASS: goals CRUD and undo, optional pot creation, unique funding, deadline rate added only on save, recurring end date, deletion retains pot and payments, backup restores goals.
+PASS: decisions navigation, draft isolation, variants, linked funding, stress test, explicit adoption preview, persistent undo after reload, preserved actuals and deletion undo.
+PASS: shared timeline controls and adoption/undo, assistant permissions, local CSV mapping and preview, transfer classification, duplicate exclusion, learned categories and confirmed month closure/reopening.
+PASS: partial payment live preview, remaining-only checkoff, repeat protection, actual-ledger linkage, existing-payment assignment without duplication, deletion and undo, storage failure preservation and independent months.
+PASS: quarterly editor, immediate projection, income/checklist/balance layout order, full payment and three-month recurrence.
+PASS: split salary and reserve income, both charts update on partial payment and undo without mutating the plan or pots.
+PASS: fixed/variable groups and changes, old payment preservation after plan revision, resolved edit/delete/undo, required annual payment-month review, prior-month preservation and annual recurrence.
+PASS: one expense view, direct new-purchase linkage across revisions, chart filters, goal purchase review without writes, adoption confirmation, repeat guard, reversal and infeasible result.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> spielraum-claude-handoff@2.12.0 check
+> node tools/check.mjs
+
+45 JavaScript-Dateien syntaktisch gültig; Modul-, HTML- und Offline-Ressourcen vorhanden. Kein visueller Browsertest.
+
+Lokaler HTTP-Server: HTML, JS, CSS und Webmanifest mit korrekten MIME-Typen ausgeliefert.
+Originaldateien bytegleich zum veröffentlichten Commit. Ursprungsrepository unverändert.

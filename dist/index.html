@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="de" data-version="2">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eeece4">
+<meta name="description" content="Dein Monatsplan: Einnahmen, Ausgaben und Rücklagen. Sieh sofort, was übrig bleibt – mit interaktiven Kreisdiagrammen und lokaler Speicherung.">
+<title>Spielraum · Dein Monatsplan</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='19' fill='%23302a48'/%3E%3Cpath d='M19 41C19 21 45 43 45 23M19 31C19 11 45 33 45 13M19 51C19 31 45 53 45 33' fill='none' stroke='%23f29a78' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="manifest" href="./manifest.webmanifest" crossorigin="use-credentials">
+<link rel="apple-touch-icon" href="./app-icon-v3-192.png">
+<link rel="stylesheet" href="./planner.css">
+<link rel="stylesheet" href="./refinement.css">
+</head>
+<body>
+<div id="app"><div class="boot">spielraum<span>Dein Monatsplan wird geladen …</span></div></div>
+<dialog id="dialog" class="modal" aria-labelledby="dialog-title"></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<input id="import-file" type="file" accept="application/json,.json" hidden>
+<script type="module" src="./planner-ui.js"></script>
+</body>
+</html>

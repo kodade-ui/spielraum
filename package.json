@@ -1,0 +1,12 @@
+{
+  "name": "spielraum-claude-handoff",
+  "version": "2.12.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "test": "node tools/test.mjs",
+    "check": "node tools/check.mjs"
+  }
+}

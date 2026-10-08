@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.*
+private-data/
+spielraum-backup*.json
+spielraum-rohdaten*.json
+*.zip
