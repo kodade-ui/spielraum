@@ -1,3 +1,0 @@
-const fs=require('node:fs');
-const sharp=require(require.resolve('sharp',{paths:[process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES||process.cwd()]}));
-(async()=>{const svg=fs.readFileSync('assets/app-icon.svg','utf8');fs.writeFileSync('dist/app-icon-v3.svg',svg);for(const size of [192,512,1024])await sharp(Buffer.from(svg),{density:288}).resize(size,size).png().toFile(`dist/app-icon-v3-${size}.png`);await sharp(Buffer.from(svg.replace('rx="104"','rx="0"')),{density:288}).resize(512,512).png().toFile('dist/app-icon-v3-maskable-512.png');for(const size of [192,512])fs.copyFileSync(`dist/app-icon-v3-${size}.png`,`dist/icon-${size}.png`);})().catch(e=>{console.error(e.message);process.exitCode=1;});

@@ -14,6 +14,19 @@ Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Priorit�
 - Ziele, Zielzeitplan, „Kauf prüfen“ direkt am Ziel, fortgeschrittene alte Szenarien hinter einer sekundären Aufklappfunktion.
 - Lokale Speicherung, Datei-Backup, Wiederherstellung, PWA-Installation und Offline-Shell.
 
+## Erledigt in 3.0 (8. Oktober 2026) · Paket 1
+
+- Neues Stylesheet, Dunkelmodus, untere Navigation mit Plus-Taste.
+- Bereich „Monat“ ersetzt Monatsplan + Ausgaben: eine Hauptzahl „Noch frei“, Aufteilungsbalken, eine Liste (Rechnungen, Budgets, Ohne Budget, Sparen, Einnahmen), Detailblatt je Posten.
+- Schnellerfassung (auch per App-Icon lang drücken), Ein-Tipp-Zuordnung von Käufen ohne Budget.
+- Kauf prüfen, Szenarien, Zeitplan, CSV-Import, Monatsabschluss aus der Oberfläche entfernt (Daten bleiben).
+- Neues Logo, Icons als Dateien, Startfarben passend zur App.
+
+## Nächste freigegebene Pakete
+
+- **Paket 2 · Sparen:** Rücklagen und Ziele in einem Bereich, Sparrechner mit Terminschieber, Logik- und Testaufräumen der entfernten Funktionen.
+- **Paket 3 · Jahr:** Zwölf-Monats-Leiste mit Spitzen (ersetzt „Ein Blick nach vorn“), Abos & Verträge mit Jahreskosten, Monatsrückblick Plan gegen Ist.
+
 ## Erledigt in 2.13 (8. Oktober 2026)
 
 - Code zeilenweise formatiert, nachweislich ohne Verhaltensänderung.

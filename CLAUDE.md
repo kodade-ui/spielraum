@@ -4,7 +4,7 @@
 
 Dies ist eine bestehende private Budget-PWA, keine Aufforderung zu einem Neubau. Nutzer kommuniziert auf Deutsch, ist kein Softwareentwickler und erwartet selbstständig erledigte, freigegebene Aufgaben. Erst prüfen und konkret vorschlagen; Änderungen erst nach Freigabe. Kein Bankzugang und keine personenbezogenen Daten im Paket. Keine Hintergrundaktionen oder dauerhaften Erinnerungen anlegen.
 
-Lies `docs/ARCHITEKTUR-UND-RECHENREGELN.md`, `docs/OFFENE-PUNKTE.md` und `docs/TESTEN-UND-UMZIEHEN.md`. Die aktuelle App ist Version **2.13**, Service-Worker-Cache **v2-15** (Änderungen gegenüber 2.12: `docs/AENDERUNGEN-2.13.md`). Ursprünglicher Quellstand 2.12: `6897d9daee90b0e8dd843c1ee933b7054d5e6901`; seitdem Git-Historie im Projektordner. Die Anbieter-Publikationsnummer 15 ist eine andere Zählung als die App-Version.
+Lies `docs/ARCHITEKTUR-UND-RECHENREGELN.md`, `docs/OFFENE-PUNKTE.md` und `docs/TESTEN-UND-UMZIEHEN.md`. Die aktuelle App ist Version **3.0**, Service-Worker-Cache **v3-1** (Änderungen: `docs/AENDERUNGEN-2.13.md`, `docs/AENDERUNGEN-3.0.md`). Veröffentlicht über GitHub Pages aus `kodade-ui/spielraum` (Workflow `.github/workflows/pages.yml`, nur nach bestandenen Tests). Ursprünglicher Quellstand 2.12: `6897d9daee90b0e8dd843c1ee933b7054d5e6901`; seitdem Git-Historie im Projektordner. Die Anbieter-Publikationsnummer 15 ist eine andere Zählung als die App-Version.
 
 ## Technik
 
@@ -13,10 +13,11 @@ Lies `docs/ARCHITEKTUR-UND-RECHENREGELN.md`, `docs/OFFENE-PUNKTE.md` und `docs/T
 - `dist/planner-ui.js` hält UI-Zustand, Navigation, Dialoge, globale Events, Persistenz und Undo.
 - Fachlogik liegt in kleinen Modulen: `planner.js`, `reconciliation.js`, `reserves.js`, `goals.js`, `scenarios.js`, `purchase.js`, `timeline.js`.
 - Seit 2.13 ist der Code zeilenweise formatiert (eine Anweisung/Deklaration pro Zeile). HTML in Template-Strings bleibt einzeilig, weil Umbrüche dort die Ausgabe verändern würden.
-- Styles: zuerst `planner.css`, danach `refinement.css`. Das erste Stylesheet enthält viele historische Überschreibungen. Selektorspezifität und Ladereihenfolge beachten.
+- Styles: genau ein Stylesheet `app.css` mit Tokens (hell/dunkel) am Anfang. Farben nur über Tokens, keine späteren Überschreibungen anhängen; bestehende Regel ändern statt neue darüberlegen.
+- `month-ui.js` rendert den Bereich „Monat“ (Plan und tatsächliche Ausgaben zusammen, Schnellerfassung, Detailblatt). Geldlogik nur über `reconcileMonth`, `recordPlannedExpense`, `saveActual`, `saveEntryClassification`.
+- Icons: Quellen `icon.svg`, `icon-maskable.svg`, `icon-shortcut.svg`; PNGs daraus mit einem Browser rendern. Im Manifest nur Dateien, keine eingebetteten Data-URIs (`npm run check` prüft das).
 - `package.json` und `tools/` wurden nur zur portablen Übergabe ergänzt. `SOURCE-MANIFEST.json` beschreibt den Ausgangsstand 2.12; seit 2.13 weichen `dist/*.js`, `dist/*.css` und `tests/ui-flow.mjs` davon ab (Formatierung + Korrekturen, siehe Git-Log).
 - `npm start`, `npm test`, `npm run check`; Node.js 24. Kein `npm install` erforderlich. Der Server bindet nur an 127.0.0.1, sein Port bleibt standardmäßig 4173.
-- Die optionalen historischen Icon-Skripte benötigen für das Rendern `sharp`; das ist kein Erfordernis zum Starten oder Testen. Fertige Icons sind enthalten. Keine Pakete allein für unveränderte Icons installieren.
 
 ## Unverhandelbare Datenregeln
 
@@ -33,8 +34,9 @@ Lies `docs/ARCHITEKTUR-UND-RECHENREGELN.md`, `docs/OFFENE-PUNKTE.md` und `docs/T
 ## Qualität und Umfang
 
 - Primär Android/Touch, Breiten 360–430 px; zusätzlich Desktop und 200 % Textvergrößerung berücksichtigen. Lesbare Beträge und ausreichend große Bedienflächen vor maximaler Informationsdichte.
-- Vier Hauptbereiche: Monatsplan, Rücklagen, Ausgaben, Ziele. Kein neuer Hauptbereich „Auswertung“, keine erneute Aufteilung Ausgaben/Abgleich.
+- Bereiche seit 3.0: Monat, Rücklagen, Ziele (untere Navigation, Plus-Taste = Schnellerfassung). Vom Nutzer freigegebenes Zielbild: Monat · Sparen (Rücklagen + Ziele) · Jahr. Keine erneute Trennung von Plan und Ausgaben.
+- Entfernt auf Wunsch des Nutzers: Kauf prüfen, Szenarien/Entscheidungen, Zeitplan, CSV-Import, Monatsabschluss. Logikmodule und gespeicherte Daten dazu bleiben vorerst erhalten (Paket 2 räumt auf); nichts davon wieder einbauen.
 - Kein Frameworkwechsel, Cloudspeicher oder Rewrite allein aus Bequemlichkeit. Solche Architekturänderungen separat vorschlagen und abstimmen.
 - Tests sind Prüfmittel, keine Produktdefinition: Ältere Testtitel erwähnen historische Jahresanteile. Die aktuellen Regeln stehen im Fachkonzept und im Code.
 - Nach einer Änderung vollständiges Projekt zurückgeben, nicht nur einzelne Schnipsel. Erläutere Auswirkungen auf Speicherung/PWA und notwendige manuelle Prüfungen.
-- Kein Live-Hosting-Zugang im Paket. Ohne explizit geklärten Zugang kann die bisherige Adresse nicht direkt aktualisiert werden. Neue Veröffentlichung zunächst nur mit Beispieldaten prüfen.
+- Veröffentlichung: Push auf `main` → GitHub Actions testet und veröffentlicht `dist/` unter https://kodade-ui.github.io/spielraum/. Die installierte App des Nutzers aktualisiert sich darüber; deshalb vor jedem Push alle Prüfungen laufen lassen und nur mit fiktiven Daten testen.

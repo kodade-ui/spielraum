@@ -1,6 +1,6 @@
 # Architektur und verbindliche Rechenregeln
 
-Diese Beschreibung bezieht sich auf den exportierten Stand 2.12. Die Entwicklungshistorie enthält absichtlich auch überholte Beschreibungen.
+Diese Beschreibung bezieht sich auf Stand 3.0 (Module) bzw. die unveränderten Rechenregeln seit 2.12. Die Entwicklungshistorie enthält absichtlich auch überholte Beschreibungen.
 
 ## Module
 
@@ -14,11 +14,12 @@ Diese Beschreibung bezieht sich auf den exportierten Stand 2.12. Die Entwicklung
 | `reconciliation.js`, `reconciliation-ui.js`, `plan-payments-ui.js` | Zusammengeführte Ausgabenansicht, Verknüpfungen, Teilzahlungen, Import, Monatsabschluss |
 | `reconciliation-graphics.js`, `budget-insights.js` | Monatsaufteilung, Restbudget, Kategorien und Erklärung von Planveränderungen |
 | `goals.js`, `goals-ui.js` | Wünsche, Preis, Zielmonat, Topfzuordnung und Sparbedarf |
-| `purchase.js`, `purchase-ui.js` | Einfache Kaufprüfung aus einem Ziel, Folgeausgaben, partielle Topffinanzierung, späterer Beginn |
-| `scenarios.js`, `scenarios-ui.js`, `scenarios-schema.js` | Bestehende erweiterte Vergleiche, Vorschau, Übernahmejournal und geschützte Rücknahme |
-| `timeline.js`, `timeline-ui.js`, `planning-schema.js` | Gemeinsamer Zielzeitplan, Ratenverteilung und zusätzliche Datenvalidierung |
+| `purchase.js` (Oberfläche seit 3.0 entfernt) | Einfache Kaufprüfung aus einem Ziel, Folgeausgaben, partielle Topffinanzierung, späterer Beginn |
+| `scenarios.js`, `scenarios-schema.js` (Oberfläche seit 3.0 entfernt; `makeJournal` wird weiter genutzt) | Bestehende erweiterte Vergleiche, Vorschau, Übernahmejournal und geschützte Rücknahme |
+| `timeline.js`, `planning-schema.js` (Zeitplan-Oberfläche seit 3.0 entfernt; Schema validiert gespeicherte Daten weiter) | Gemeinsamer Zielzeitplan, Ratenverteilung und zusätzliche Datenvalidierung |
 | `decision-assistant.js` | Deterministische Suche nach Varianten; kein Modellaufruf |
-| `theme.js`, `planner.css`, `refinement.css` | Kategorienfarben und gewachsene Gestaltung |
+| `month-ui.js` | Bereich „Monat“: Hauptzahl, Aufteilungsbalken, Postenliste, Schnellerfassung, Detailblatt |
+| `theme.js`, `app.css` | Kategorienfarben und das einzige Stylesheet (Tokens hell/dunkel) |
 | `sw.js`, `manifest.webmanifest` | Offline-Shell und Installationsidentität |
 
 ## Zustand und Speicherung
