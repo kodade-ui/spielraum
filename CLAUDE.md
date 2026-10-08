@@ -4,7 +4,7 @@
 
 Dies ist eine bestehende private Budget-PWA, keine Aufforderung zu einem Neubau. Nutzer kommuniziert auf Deutsch, ist kein Softwareentwickler und erwartet selbstständig erledigte, freigegebene Aufgaben. Erst prüfen und konkret vorschlagen; Änderungen erst nach Freigabe. Kein Bankzugang und keine personenbezogenen Daten im Paket. Keine Hintergrundaktionen oder dauerhaften Erinnerungen anlegen.
 
-Lies `docs/ARCHITEKTUR-UND-RECHENREGELN.md`, `docs/OFFENE-PUNKTE.md` und `docs/TESTEN-UND-UMZIEHEN.md`. Die aktuelle App ist Version **2.12**, Service-Worker-Cache **v2-14**. Quellstand: `6897d9daee90b0e8dd843c1ee933b7054d5e6901`. Die Anbieter-Publikationsnummer 15 ist eine andere Zählung als die App-Version.
+Lies `docs/ARCHITEKTUR-UND-RECHENREGELN.md`, `docs/OFFENE-PUNKTE.md` und `docs/TESTEN-UND-UMZIEHEN.md`. Die aktuelle App ist Version **2.13**, Service-Worker-Cache **v2-15** (Änderungen gegenüber 2.12: `docs/AENDERUNGEN-2.13.md`). Ursprünglicher Quellstand 2.12: `6897d9daee90b0e8dd843c1ee933b7054d5e6901`; seitdem Git-Historie im Projektordner. Die Anbieter-Publikationsnummer 15 ist eine andere Zählung als die App-Version.
 
 ## Technik
 
@@ -12,8 +12,9 @@ Lies `docs/ARCHITEKTUR-UND-RECHENREGELN.md`, `docs/OFFENE-PUNKTE.md` und `docs/T
 - `dist/` ist der wirkliche Quellcode und zugleich der Webroot. Hier editieren, kein nicht vorhandenes `src/` suchen.
 - `dist/planner-ui.js` hält UI-Zustand, Navigation, Dialoge, globale Events, Persistenz und Undo.
 - Fachlogik liegt in kleinen Modulen: `planner.js`, `reconciliation.js`, `reserves.js`, `goals.js`, `scenarios.js`, `purchase.js`, `timeline.js`.
+- Seit 2.13 ist der Code zeilenweise formatiert (eine Anweisung/Deklaration pro Zeile). HTML in Template-Strings bleibt einzeilig, weil Umbrüche dort die Ausgabe verändern würden.
 - Styles: zuerst `planner.css`, danach `refinement.css`. Das erste Stylesheet enthält viele historische Überschreibungen. Selektorspezifität und Ladereihenfolge beachten.
-- `package.json` und `tools/` wurden nur zur portablen Übergabe ergänzt. Alle Originaldateien unter `dist/`, `tests/`, `assets/` und `scripts/` sind unverändert vom genannten Commit übernommen. Vergleich über `SOURCE-MANIFEST.json`.
+- `package.json` und `tools/` wurden nur zur portablen Übergabe ergänzt. `SOURCE-MANIFEST.json` beschreibt den Ausgangsstand 2.12; seit 2.13 weichen `dist/*.js`, `dist/*.css` und `tests/ui-flow.mjs` davon ab (Formatierung + Korrekturen, siehe Git-Log).
 - `npm start`, `npm test`, `npm run check`; Node.js 24. Kein `npm install` erforderlich. Der Server bindet nur an 127.0.0.1, sein Port bleibt standardmäßig 4173.
 - Die optionalen historischen Icon-Skripte benötigen für das Rendern `sharp`; das ist kein Erfordernis zum Starten oder Testen. Fertige Icons sind enthalten. Keine Pakete allein für unveränderte Icons installieren.
 

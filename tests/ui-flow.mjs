@@ -11,7 +11,9 @@ function submit(data={}){Object.assign(activeForm.data,data);listeners.submit({p
 function input(data){Object.assign(activeForm.data,data);listeners.input({target:{closest:q=>q==='#item-form'?activeForm:null}});}
 const state=()=>JSON.parse(storage.get(KEY));const page=()=>get('#app').innerHTML;
 await import('../dist/planner-ui.js?test');
-assert.match(page(),/Ausgabe anlegen/);assert.match(page(),/Neue Ausgabe/);
+assert.match(page(),/Ausgabe anlegen/);
+// 2.13: mobile Aktionsleiste im Monatsplan bietet alle drei Postenarten (obere Zeile ist dort per CSS ausgeblendet).
+{const bar=page().match(/<div class="bottom-actions bottom-actions--plan">([\s\S]*?)<\/div>/);assert.ok(bar,'Mobile Aktionsleiste fehlt');for(const a of ['new-expense','new-income','new-saving'])assert.match(bar[1],new RegExp('data-action="'+a+'"'));}
 await click({action:'new-income'});input({title:'Gehalt',amount:'3.000,00'});assert.match(get('#live-projection').innerHTML,/3.000,00/);submit();assert.equal(totals(state(),currentMonth()).income,300000);
 await click({action:'new-expense'});input({title:'Miete',amount:'900,00'});assert.match(get('#live-projection').innerHTML,/2.100,00/);submit();assert.equal(totals(state(),currentMonth()).remaining,210000);assert.match(page(),/ring-segment/);assert.match(page(),/900,00/);
 const rent=state().items.find(i=>i.title==='Miete');await click({action:'edit-item',id:rent.id});input({amount:'950.50'});assert.match(get('#live-projection').innerHTML,/2.049,50/);submit();assert.equal(totals(state(),currentMonth()).remaining,204950);

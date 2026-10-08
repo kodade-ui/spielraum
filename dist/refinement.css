@@ -963,9 +963,6 @@ h1,h2,h3 {
   .item-tabs {
     gap:12px
   }
-  .item-meta .meta-separator {
-    display:none
-  }
   .item-tabs button {
     font-size:.875rem
   }
@@ -1151,5 +1148,39 @@ h1,h2,h3 {
   .goal-actions {
     flex-direction:column;
     align-items:stretch
+  }
+}
+/* 2.13: Auf dem Handy nur noch eine Aktionsleiste im Monatsplan (unten, im Daumenbereich).
+   Die obere Zeile bleibt ab 761 px sichtbar, wo es keine untere Leiste gibt. */
+@media(max-width:760px) {
+  .add-actions {
+    display:none
+  }
+  .bottom-actions--plan {
+    flex-wrap:wrap;
+    gap:8px;
+    padding-left:16px;
+    padding-right:16px
+  }
+  .bottom-actions--plan .btn {
+    flex:1 1 0;
+    min-width:min-content;
+    padding:10px 6px;
+    gap:6px;
+    justify-content:center;
+    text-align:center;
+    white-space:normal;
+    line-height:1.15
+  }
+}
+@media(max-width:380px) {
+  .bottom-actions--plan {
+    gap:6px;
+    padding-left:12px;
+    padding-right:12px
+  }
+  .bottom-actions--plan .btn {
+    font-size:13px;
+    gap:4px
   }
 }

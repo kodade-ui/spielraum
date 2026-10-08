@@ -14,6 +14,15 @@ Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Priorit�
 - Ziele, Zielzeitplan, „Kauf prüfen“ direkt am Ziel, fortgeschrittene alte Szenarien hinter einer sekundären Aufklappfunktion.
 - Lokale Speicherung, Datei-Backup, Wiederherstellung, PWA-Installation und Offline-Shell.
 
+## Erledigt in 2.13 (8. Oktober 2026)
+
+- Code zeilenweise formatiert, nachweislich ohne Verhaltensänderung.
+- Trennzeichen in der Postenliste („WohnenMonatlich“) behoben.
+- Doppelte Aktionsleiste im Monatsplan auf dem Handy aufgelöst; untere Leiste enthält jetzt auch „Rücklage“.
+- Neu bemerkt, offen: Legende der Verteilungskarte reicht auf Handybreite bis an den Kartenrand.
+
+Details und Prüfungen: `docs/AENDERUNGEN-2.13.md`.
+
 ## Wichtigste ungelöste Rückmeldung
 
 Nach Version 2.12 erkannte der Nutzer vor allem die Zusammenführung der Ausgaben, das Entfernen des prominenten Entscheidungspfads und minimale Designänderungen. Er erwartete einen deutlich sichtbaren, zusammenhängenden Fortschritt nach der besprochenen SharkFin-Referenz. Diese Kritik ist nicht als Missverständnis des Nutzers abzuweisen. Die überarbeitete Gesamtsicht ist noch nicht überzeugend fertig.

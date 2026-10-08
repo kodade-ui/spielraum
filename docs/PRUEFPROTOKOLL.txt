@@ -100,3 +100,91 @@ npm warn Unknown env config "http-proxy". This will stop working in the next maj
 
 Lokaler HTTP-Server: HTML, JS, CSS und Webmanifest mit korrekten MIME-Typen ausgeliefert.
 Originaldateien bytegleich zum veröffentlichten Commit. Ursprungsrepository unverändert.
+
+=== Nachtrag 2026-10-08: Prüfung Version 2.13 (Claude) ===
+Node: v22.22.0
+# Subtest: Actual purchases are isolated from recurring planning and reserves, totals reconcile per month
+# Subtest: Marking an existing expense as a pot contribution keeps free budget unchanged and preserves previous months
+# Subtest: Payment days clamp to short months; annual provisions and missing days stay undated
+# Subtest: Amounts preserve cents with German grouping and mobile decimal dots
+# Subtest: Monthly and annual recurrences handle leap years and inclusive ends
+# Subtest: Budget, actual flow and planned costs stay distinct; skips apply to one occurrence
+# Subtest: Backup validation rejects invalid money, dates and missing categories
+# Subtest: Wishes do not change the budget; goals survive backup and validate references and money
+# Subtest: Existing contributions, withdrawals and corrections feed deadline rate without double counting money
+# Subtest: Completed goals release a pot but cannot be reopened into duplicate allocation
+# Subtest: Category upgrade preserves all financial inputs, custom names and colors; reruns do not resurrect deleted defaults
+# Subtest: Names, German keywords, custom categories and deliberate corrections drive suggestions
+# Subtest: Day model reserves fixed costs and savings immediately; month end agrees exactly, also leap months and deficits
+# Subtest: Comparison never fabricates history and snapshots remain frozen after later edits
+# Subtest: Analysis uses user targets and actual totals, while savings pie preserves separate purposes
+# Subtest: Partial payments and checkoff record only the outstanding amount, once, without altering planning
+# Subtest: Months remain independent; deleting a payment reopens its amount and overspending stays visible
+# Subtest: Annual monthly provisions, skips, inactive entries, bad dates and closed periods are handled explicitly
+# Subtest: Every planned expense counts immediately, independent of day; charts and future months update
+# Subtest: Annual amounts are monthly provisions; one-off costs only count in their month
+# Subtest: Recurring edits and deletions preserve past months; one-month edits preserve later months
+# Subtest: V1 migration retains notes, categories, skips and all expenses including future dated ones, without doubling income
+# Subtest: Over-budget plans have no negative pie slices; annual fractional-cent items stay editable
+# Subtest: Amounts and backups validate before any persistence
+# Subtest: Deleting an expense also removes its already scheduled future price revisions
+# Subtest: Shared schedule allocates each euro once, releases capacity and never modifies its source
+# Subtest: Fixed deadlines precede priority; protected capital and future corrections cannot fund a goal twice
+# Subtest: Only explicitly released savings are replaced; prior months and edited adopted posts remain protected
+# Subtest: Inverse price search returns exact affordable ceiling, only changes allowed inputs and saves isolated drafts
+# Subtest: Delay uses actual saving growth; explicit pause resumes at the right month; zero permission changes no savings
+# Subtest: CSV handles quoted delimiters, line breaks, German cents, foreign currency and duplicate review
+# Subtest: Learning, transfers and plan matching stay separate from consumption and avoid double deductions
+# Subtest: Closing requires completeness, carries confirmed cash once, records allocation and supports protected reversal
+# Subtest: Separate debit/credit imports and malformed additions validate before changing any stored plan
+# Subtest: Goal purchase: partial reserve funding counts once, inspection is read-only, adoption round-trips and reverses safely
+# Subtest: Purchase constraints reject double funding, missing pots, closed months and unsafe adoption; later date uses real pot growth
+# Subtest: Plan-change explanation reconciles exactly through recurrence, revisions and withdrawals
+# Subtest: Quarterly charges occur in full every third month across years, respect end and skip, and survive backup
+# Subtest: Revisions in intermediate months retain the original quarterly phase and past amounts
+# Subtest: Quarterly pot deposits accrue only in payment months and annual provisions remain monthly
+# Subtest: Reconciliation starts with income separately from pot withdrawals and combines recorded, reserved and open amounts
+# Subtest: Separate income sources fund one consistent allocation; payment moves open to spent without changing free money
+# Subtest: Empty, zero-income, deficit and overspent months produce explicit finite graphics
+# Subtest: Old and new actuals stay linked across amount, title, category and one-month revisions without duplicate payment
+# Subtest: Fixed and variable open totals honor category defaults and item overrides, without changing money
+# Subtest: New annual payments occur in full only every twelve months, keep their phase on edits and support dates, skips and end
+# Subtest: Legacy annual review preserves earlier monthly shares and actual records; converted pot movements occur only when due
+# Subtest: Annual scenario preview, adoption, backup and undo share payment-month semantics
+# Subtest: Initial capital never inflates income; future recurring deposits count once in both views
+# Subtest: One-off and recurring withdrawals free monthly budget without double booking
+# Subtest: Changes, month exclusions, end dates and deletions immediately adjust projected pots, preserve prior months
+# Subtest: Manual correction is a new starting point and does not modify earlier months or cashflow
+# Subtest: Linking an existing saving does not create a second expense; backup validation preserves pots
+# Subtest: Multiple starting months, annual monthly provisions and deficits reconcile with the total
+# Subtest: Withdrawal does not suppress the inherited budget allowance
+# Subtest: Additional scenario income cannot silently replace an inherited monthly allowance
+# Subtest: Draft scenarios and backups leave real planning unchanged; funded purchase counts once and delays goals
+# Subtest: Removing revised recurring series preserves history, supports overlapping selections and yearly costs
+# Subtest: Stress test honors month, top funding and thresholds, including existing baseline shortfalls
+# Subtest: Adoption matches preview, forbids duplicate adoption, survives reload and rolls back only its changes
+# Subtest: Rollback stops on edited entries, new monthly exceptions or altered related revisions
+# Subtest: Broken references are repairable drafts but cannot simulate or adopt; malformed journals are rejected
+# tests 62
+# suites 0
+# pass 62
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1628.52211
+PASS: direct add/edit/delete/undo; live form projection; annual payment in full; pie/ring rendering; demo isolation; escaping; restore validation; storage failure preservation; optional navigation tool with API stub.
+PASS: automatic browser-state migration keeps the original V1 value and immediately includes a future-dated expense.
+PASS: update backup is byte-identical; original items retained; inline category preserves draft; type switch preserves amount; reviewed assignments; removed analysis navigation; upgrade failure preserves stored original.
+PASS: reserves update keeps original data and backup; pot creation, deposit, withdrawal, correction and undo reconcile; linked-pot deletion blocked; restore retains balances.
+PASS: inline pot from expense; immediate linked projection; payment ledger; actual expense add/edit/delete/undo; separate budget and pot totals; custom categories; category deletion protection; save failure retains data.
+PASS: goals CRUD and undo, optional pot creation, unique funding, deadline rate added only on save, recurring end date, deletion retains pot and payments, backup restores goals.
+PASS: decisions navigation, draft isolation, variants, linked funding, stress test, explicit adoption preview, persistent undo after reload, preserved actuals and deletion undo.
+PASS: shared timeline controls and adoption/undo, assistant permissions, local CSV mapping and preview, transfer classification, duplicate exclusion, learned categories and confirmed month closure/reopening.
+PASS: partial payment live preview, remaining-only checkoff, repeat protection, actual-ledger linkage, existing-payment assignment without duplication, deletion and undo, storage failure preservation and independent months.
+PASS: quarterly editor, immediate projection, income/checklist/balance layout order, full payment and three-month recurrence.
+PASS: split salary and reserve income, both charts update on partial payment and undo without mutating the plan or pots.
+PASS: fixed/variable groups and changes, old payment preservation after plan revision, resolved edit/delete/undo, required annual payment-month review, prior-month preservation and annual recurrence.
+PASS: one expense view, direct new-purchase linkage across revisions, chart filters, goal purchase review without writes, adoption confirmation, repeat guard, reversal and infeasible result.
+45 JavaScript-Dateien syntaktisch gültig; Modul-, HTML- und Offline-Ressourcen vorhanden. Kein visueller Browsertest.
+Weitere Prüfungen (AST/CSSOM-Vergleich, Screenshots, Update-Simulation): siehe docs/AENDERUNGEN-2.13.md
