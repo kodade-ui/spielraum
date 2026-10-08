@@ -1,22 +1,114 @@
 export const KEY='spielraum.v1';
 export const COLORS=['#4263eb','#f09640','#16a085','#af66d9','#e36580','#4d9ebe','#a3a825','#7f8ba3'];
 export const uid=()=>crypto.randomUUID();
-export const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+export const today=()=>{
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+};
 export const monthOf=d=>d.slice(0,7);
 export const daysIn=m=>new Date(Number(m.slice(0,4)),Number(m.slice(5)),0).getDate();
-export const shiftMonth=(m,n)=>{const d=new Date(Number(m.slice(0,4)),Number(m.slice(5))-1+n,1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`};
+export const shiftMonth=(m,n)=>{
+  const d=new Date(Number(m.slice(0,4)),Number(m.slice(5))-1+n,1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+};
 export const euro=n=>new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(n/100);
 export const num=n=>new Intl.NumberFormat('de-DE',{maximumFractionDigits:0}).format(n/100);
 export const monthName=m=>new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric'}).format(new Date(m+'-01T12:00:00'));
-export function money(v){let s=String(v).trim().replace(/\s|€/g,'');if(s.includes(',')){if(!/^(\d+|\d{1,3}(\.\d{3})+)(,\d{1,2})?$/.test(s))throw Error('Bitte einen Betrag wie 29,90 eingeben.');s=s.replace(/\./g,'').replace(',','.');}else if(s.includes('.')){if(/^\d+\.\d{1,2}$/.test(s)){}else if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');else throw Error('Bitte einen Betrag wie 29,90 eingeben.');}if(!/^\d+(\.\d{1,2})?$/.test(s))throw Error('Bitte einen Betrag wie 29,90 eingeben.');const n=Math.round(Number(s)*100);if(!Number.isSafeInteger(n)||n>100000000000)throw Error('Der Betrag ist zu groß.');return n;}
+export function money(v){
+  let s=String(v).trim().replace(/\s|€/g,'');
+  if(s.includes(',')){
+    if(!/^(\d+|\d{1,3}(\.\d{3})+)(,\d{1,2})?$/.test(s))throw Error('Bitte einen Betrag wie 29,90 eingeben.');
+    s=s.replace(/\./g,'').replace(',','.');
+  }else if(s.includes('.')){
+    if(/^\d+\.\d{1,2}$/.test(s)){}else if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');
+    else throw Error('Bitte einen Betrag wie 29,90 eingeben.');
+  }
+  if(!/^\d+(\.\d{1,2})?$/.test(s))throw Error('Bitte einen Betrag wie 29,90 eingeben.');
+  const n=Math.round(Number(s)*100);
+  if(!Number.isSafeInteger(n)||n>100000000000)throw Error('Der Betrag ist zu groß.');
+  return n;
+}
 export const inputMoney=n=>(n/100).toFixed(2).replace('.',',');
 export const validMonth=m=>typeof m==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(m)&&m>='2000-01'&&m<='2100-12';
 export const validDate=d=>typeof d==='string'&&validMonth(d.slice(0,7))&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number(d.slice(8))>=1&&Number(d.slice(8))<=daysIn(d.slice(0,7));
-export function blank(){return {version:1,transactions:[],rules:[],skips:[],categories:['Wohnen','Lebensmittel','Mobilität','Freizeit','Shopping','Gesundheit','Abos & Verträge','Sonstiges'].map((name,i)=>({id:'c'+i,name,color:COLORS[i]})),plans:{},settings:{defaultBudget:0,lastBackup:null},updatedAt:null};}
+export function blank(){
+  return {version:1,transactions:[],rules:[],skips:[],categories:['Wohnen','Lebensmittel','Mobilität','Freizeit','Shopping','Gesundheit','Abos & Verträge','Sonstiges'].map((name,i)=>({id:'c'+i,name,color:COLORS[i]})),plans:{},settings:{defaultBudget:0,lastBackup:null},updatedAt:null};
+}
 export const planFor=(s,m)=>s.plans[m]??{amount:s.settings.defaultBudget,limits:{},complete:false};
-export function entries(s,m){const out=s.transactions.filter(t=>monthOf(t.date)===m).map(t=>({...t,recurring:false}));for(const r of s.rules){const start=monthOf(r.date);if(m<start||(r.end&&m>monthOf(r.end)))continue;if(r.interval==='year'&&m.slice(5)!==start.slice(5))continue;const date=m+'-'+String(Math.min(Number(r.date.slice(8)),daysIn(m))).padStart(2,'0');if(date<r.date||(r.end&&date>r.end))continue;const id=r.id+'@'+m;if(s.skips.includes(id))continue;out.push({...r,id,date,ruleId:r.id,recurring:true});}return out.sort((a,b)=>b.date.localeCompare(a.date)||a.title.localeCompare(b.title,'de'));}
-export function stats(s,m,cut=today()){const all=entries(s,m),booked=all.filter(t=>t.date<=cut),sum=(a,k)=>a.filter(t=>t.type===k).reduce((n,t)=>n+t.amount,0);const expense=sum(booked,'expense'),saving=sum(booked,'saving'),income=sum(booked,'income');const upcoming=all.filter(t=>t.date>cut);return {all,booked,expense,saving,income,remaining:planFor(s,m).amount-expense-saving,pending:sum(upcoming,'expense')+sum(upcoming,'saving'),balance:income-expense-saving};}
-export function daily(s,m,day){const date=m+'-'+String(Math.min(day,daysIn(m))).padStart(2,'0');return planFor(s,m).amount-entries(s,m).filter(t=>t.date<=date&&t.type!=='income').reduce((n,t)=>n+t.amount,0);}
-export function history(s,m){return Object.keys(s.plans).filter(k=>k<m&&k<monthOf(today())&&s.plans[k].complete&&s.plans[k].amount>0).sort().slice(-6);}
-export function validate(s){if(!s||s.version!==1||!Array.isArray(s.transactions)||!Array.isArray(s.rules)||!Array.isArray(s.categories)||!Array.isArray(s.skips)||!s.plans||typeof s.plans!=='object'||Array.isArray(s.plans)||!s.settings)throw Error('Diese Datei ist kein gültiges Spielraum-Backup.');const amount=n=>Number.isSafeInteger(n)&&n>=0&&n<=100000000000;const str=(v,max=160)=>typeof v==='string'&&v.length>0&&v.length<=max;const id=v=>str(v,100)&&/^[a-zA-Z0-9@_-]+$/.test(v);if(s.transactions.length>100000||s.rules.length>1000||s.categories.length>100)throw Error('Die Datei enthält zu viele Einträge.');if(!amount(s.settings.defaultBudget)||!(s.settings.lastBackup===null||typeof s.settings.lastBackup==='string'))throw Error('Ungültige Einstellungen.');const ids=new Set();for(const c of s.categories){if(!id(c.id)||ids.has(c.id)||!str(c.name,45)||!/^#[0-9a-f]{6}$/i.test(c.color))throw Error('Ungültige Kategorie.');ids.add(c.id);}if(!ids.size)throw Error('Mindestens eine Kategorie ist erforderlich.');const allIds=new Set();for(const t of [...s.transactions,...s.rules]){if(!id(t.id)||allIds.has(t.id)||!str(t.title)||!validDate(t.date)||!amount(t.amount)||t.amount===0||!['income','expense','saving'].includes(t.type)||!ids.has(t.category)||typeof t.note!=='string'||t.note.length>1000)throw Error('Ungültige Buchung.');allIds.add(t.id);}for(const r of s.rules)if(!['month','year'].includes(r.interval)||(r.end&&(!validDate(r.end)||r.end<r.date)))throw Error('Ungültige Wiederholung.');if(s.skips.some(v=>!id(v)))throw Error('Ungültige Ausnahmen.');for(const [m,p]of Object.entries(s.plans)){if(!validMonth(m)||!p||!amount(p.amount)||typeof p.complete!=='boolean'||!p.limits||typeof p.limits!=='object'||Array.isArray(p.limits))throw Error('Ungültiges Monatsbudget.');for(const [c,n]of Object.entries(p.limits))if(!ids.has(c)||!amount(n))throw Error('Ungültiges Kategorienbudget.');}return s;}
-export function demo(){const s=blank(),current=monthOf(today());s.settings.defaultBudget=260000;for(let j=-4;j<=0;j++){const m=shiftMonth(current,j),limit=j===0?Number(today().slice(8)):daysIn(m);s.plans[m]={amount:260000,limits:{c0:85000,c1:33000,c2:9000,c3:18000,c4:12000,c6:7000},complete:j<0};const add=(d,title,amount,category,type='expense')=>{if(d<=limit)s.transactions.push({id:uid(),date:m+'-'+String(d).padStart(2,'0'),title,amount,category,type,note:''})};add(1,'Gehalt',280000,'c7','income');add(1,'Miete & Nebenkosten',82000,'c0');add(2,'Rücklage',25000,'c7','saving');add(3,'Wocheneinkauf',6230+j*190,'c1');add(5,'Deutschlandticket',6300,'c2');add(7,'Kino & Essen',4180,'c3');add(9,'Wocheneinkauf',5820-j*240,'c1');add(11,'Kaffee unterwegs',680,'c3');add(14,'Streaming & Telefon',3900,'c6');add(17,'Wocheneinkauf',7150,'c1');add(20,'Neue Schuhe',8900,'c4');add(24,'Wocheneinkauf',6480,'c1');add(27,'Abend mit Freunden',4600,'c3');}s.rules.push({id:uid(),title:'Fitnessstudio',amount:3490,category:'c6',type:'expense',note:'',date:current+'-15',interval:'month',end:''});return s;}
+export function entries(s,m){
+  const out=s.transactions.filter(t=>monthOf(t.date)===m).map(t=>({...t,recurring:false}));
+  for(const r of s.rules){
+    const start=monthOf(r.date);
+    if(m<start||(r.end&&m>monthOf(r.end)))continue;
+    if(r.interval==='year'&&m.slice(5)!==start.slice(5))continue;
+    const date=m+'-'+String(Math.min(Number(r.date.slice(8)),daysIn(m))).padStart(2,'0');
+    if(date<r.date||(r.end&&date>r.end))continue;
+    const id=r.id+'@'+m;
+    if(s.skips.includes(id))continue;
+    out.push({...r,id,date,ruleId:r.id,recurring:true});
+  }
+  return out.sort((a,b)=>b.date.localeCompare(a.date)||a.title.localeCompare(b.title,'de'));
+}
+export function stats(s,m,cut=today()){
+  const all=entries(s,m),booked=all.filter(t=>t.date<=cut),sum=(a,k)=>a.filter(t=>t.type===k).reduce((n,t)=>n+t.amount,0);
+  const expense=sum(booked,'expense'),saving=sum(booked,'saving'),income=sum(booked,'income');
+  const upcoming=all.filter(t=>t.date>cut);
+  return {all,booked,expense,saving,income,remaining:planFor(s,m).amount-expense-saving,pending:sum(upcoming,'expense')+sum(upcoming,'saving'),balance:income-expense-saving};
+}
+export function daily(s,m,day){
+  const date=m+'-'+String(Math.min(day,daysIn(m))).padStart(2,'0');
+  return planFor(s,m).amount-entries(s,m).filter(t=>t.date<=date&&t.type!=='income').reduce((n,t)=>n+t.amount,0);
+}
+export function history(s,m){
+  return Object.keys(s.plans).filter(k=>k<m&&k<monthOf(today())&&s.plans[k].complete&&s.plans[k].amount>0).sort().slice(-6);
+}
+export function validate(s){
+  if(!s||s.version!==1||!Array.isArray(s.transactions)||!Array.isArray(s.rules)||!Array.isArray(s.categories)||!Array.isArray(s.skips)||!s.plans||typeof s.plans!=='object'||Array.isArray(s.plans)||!s.settings)throw Error('Diese Datei ist kein gültiges Spielraum-Backup.');
+  const amount=n=>Number.isSafeInteger(n)&&n>=0&&n<=100000000000;
+  const str=(v,max=160)=>typeof v==='string'&&v.length>0&&v.length<=max;
+  const id=v=>str(v,100)&&/^[a-zA-Z0-9@_-]+$/.test(v);
+  if(s.transactions.length>100000||s.rules.length>1000||s.categories.length>100)throw Error('Die Datei enthält zu viele Einträge.');
+  if(!amount(s.settings.defaultBudget)||!(s.settings.lastBackup===null||typeof s.settings.lastBackup==='string'))throw Error('Ungültige Einstellungen.');
+  const ids=new Set();
+  for(const c of s.categories){
+    if(!id(c.id)||ids.has(c.id)||!str(c.name,45)||!/^#[0-9a-f]{6}$/i.test(c.color))throw Error('Ungültige Kategorie.');
+    ids.add(c.id);
+  }
+  if(!ids.size)throw Error('Mindestens eine Kategorie ist erforderlich.');
+  const allIds=new Set();
+  for(const t of [...s.transactions,...s.rules]){
+    if(!id(t.id)||allIds.has(t.id)||!str(t.title)||!validDate(t.date)||!amount(t.amount)||t.amount===0||!['income','expense','saving'].includes(t.type)||!ids.has(t.category)||typeof t.note!=='string'||t.note.length>1000)throw Error('Ungültige Buchung.');
+    allIds.add(t.id);
+  }
+  for(const r of s.rules)if(!['month','year'].includes(r.interval)||(r.end&&(!validDate(r.end)||r.end<r.date)))throw Error('Ungültige Wiederholung.');
+  if(s.skips.some(v=>!id(v)))throw Error('Ungültige Ausnahmen.');
+  for(const [m,p]of Object.entries(s.plans)){
+    if(!validMonth(m)||!p||!amount(p.amount)||typeof p.complete!=='boolean'||!p.limits||typeof p.limits!=='object'||Array.isArray(p.limits))throw Error('Ungültiges Monatsbudget.');
+    for(const [c,n]of Object.entries(p.limits))if(!ids.has(c)||!amount(n))throw Error('Ungültiges Kategorienbudget.');
+  }
+  return s;
+}
+export function demo(){
+  const s=blank(),current=monthOf(today());
+  s.settings.defaultBudget=260000;
+  for(let j=-4;j<=0;j++){
+    const m=shiftMonth(current,j),limit=j===0?Number(today().slice(8)):daysIn(m);
+    s.plans[m]={amount:260000,limits:{c0:85000,c1:33000,c2:9000,c3:18000,c4:12000,c6:7000},complete:j<0};
+    const add=(d,title,amount,category,type='expense')=>{if(d<=limit)s.transactions.push({id:uid(),date:m+'-'+String(d).padStart(2,'0'),title,amount,category,type,note:''})};
+    add(1,'Gehalt',280000,'c7','income');
+    add(1,'Miete & Nebenkosten',82000,'c0');
+    add(2,'Rücklage',25000,'c7','saving');
+    add(3,'Wocheneinkauf',6230+j*190,'c1');
+    add(5,'Deutschlandticket',6300,'c2');
+    add(7,'Kino & Essen',4180,'c3');
+    add(9,'Wocheneinkauf',5820-j*240,'c1');
+    add(11,'Kaffee unterwegs',680,'c3');
+    add(14,'Streaming & Telefon',3900,'c6');
+    add(17,'Wocheneinkauf',7150,'c1');
+    add(20,'Neue Schuhe',8900,'c4');
+    add(24,'Wocheneinkauf',6480,'c1');
+    add(27,'Abend mit Freunden',4600,'c3');
+  }
+  s.rules.push({id:uid(),title:'Fitnessstudio',amount:3490,category:'c6',type:'expense',note:'',date:current+'-15',interval:'month',end:''});
+  return s;
+}

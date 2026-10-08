@@ -23,7 +23,10 @@ self.addEventListener('fetch', event => {
   const path = new URL(event.request.url).pathname;
   if(!ASSETS.some(a=>path.endsWith(a.slice(1)))) return;
   event.respondWith(fetch(event.request).then(async response => {
-    if(response.ok) { const cache=await caches.open(CACHE);await cache.put(event.request,response.clone()); }
+    if(response.ok) {
+      const cache=await caches.open(CACHE);
+      await cache.put(event.request,response.clone());
+    }
     return response;
   }).catch(()=>caches.match(event.request)));
 });

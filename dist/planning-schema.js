@@ -1,9 +1,24 @@
 import {validateDecisions} from './scenarios-schema.js';
 export function validatePlanning(s){
- const fail=()=>{throw Error('Zeitplan oder Umsatzabgleich enthalten ungültige Daten.');},id=v=>typeof v==='string'&&v.length<=100&&/^[a-zA-Z0-9_-]+$/.test(v)&&!['__proto__','constructor','prototype'].includes(v),amount=v=>Number.isSafeInteger(v)&&v>=0&&v<=100000000000,month=m=>typeof m==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(m)&&m>='2000-01'&&m<='2100-12';
- for(const g of s.goals||[])if(g.schedule&&(!Number.isInteger(g.schedule.priority)||g.schedule.priority<1||g.schedule.priority>1000||!['fixed','flexible'].includes(g.schedule.timing)||!amount(g.schedule.rate)))fail();
- if(s.timeline){const t=s.timeline;if(!month(t.start)||!amount(t.minFree)||!amount(t.cap)||!Array.isArray(t.replaceIds)||t.replaceIds.length>1000||t.replaceIds.some(x=>!id(x))||!Array.isArray(t.protected)||t.protected.length>100||t.protected.some(p=>!id(p.potId)||!amount(p.minimum)))fail();if(t.applied)validateDecisions({decisions:[{id:'timeline',title:'Zeitplan',start:'2026-01',minFree:0,protected:[],variants:[{id:'timeline',name:'Zeitplan',lines:[],removedIds:[],stress:{monthly:0,once:0,month:'2026-01',potId:''}}],applied:t.applied}]});}
- for(const x of s.actualExpenses||[]){if(x.kind&&!['expense','income','transfer'].includes(x.kind)||x.planItemId&&!id(x.planItemId)||x.planGroupId&&!id(x.planGroupId)||x.potId&&!id(x.potId)||x.importKey&&(typeof x.importKey!=='string'||x.importKey.length>100)||x.direction&&!['in','out'].includes(x.direction)||x.merchant&&(typeof x.merchant!=='string'||x.merchant.length>160))fail();}
- if(s.importRules){if(!Array.isArray(s.importRules)||s.importRules.length>5000)fail();for(const r of s.importRules)if(!r||typeof r.merchant!=='string'||r.merchant.length>160||!id(r.category)||!['expense','income','transfer'].includes(r.kind)||r.direction&&!['in','out'].includes(r.direction))fail();}
- if(s.monthClosures){if(!Array.isArray(s.monthClosures)||s.monthClosures.length>1212||new Set(s.monthClosures.map(c=>c.month)).size!==s.monthClosures.length)fail();for(const c of s.monthClosures)if(!month(c.month)||['opening','income','deposits','withdrawals'].some(k=>c[k]!==undefined&&!amount(c[k]))||!amount(c.available)||!amount(c.assigned)||c.assigned>c.available||!['free','pot'].includes(c.target)||typeof c.signature!=='string'||c.signature.length>100||typeof c.at!=='string'||c.potId&&!id(c.potId)||!Array.isArray(c.itemIds)||c.itemIds.some(x=>!id(x)))fail();else if(c.applied)validateDecisions({decisions:[{id:'closure',title:'Abschluss',start:'2026-01',minFree:0,protected:[],variants:[{id:'timeline',name:'Abschluss',lines:[],removedIds:[],stress:{monthly:0,once:0,month:'2026-01',potId:''}}],applied:c.applied}]});}
+  const fail=()=>{
+    throw Error('Zeitplan oder Umsatzabgleich enthalten ungültige Daten.');
+  },id=v=>typeof v==='string'&&v.length<=100&&/^[a-zA-Z0-9_-]+$/.test(v)&&!['__proto__','constructor','prototype'].includes(v),amount=v=>Number.isSafeInteger(v)&&v>=0&&v<=100000000000,month=m=>typeof m==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(m)&&m>='2000-01'&&m<='2100-12';
+  for(const g of s.goals||[])if(g.schedule&&(!Number.isInteger(g.schedule.priority)||g.schedule.priority<1||g.schedule.priority>1000||!['fixed','flexible'].includes(g.schedule.timing)||!amount(g.schedule.rate)))fail();
+  if(s.timeline){
+    const t=s.timeline;
+    if(!month(t.start)||!amount(t.minFree)||!amount(t.cap)||!Array.isArray(t.replaceIds)||t.replaceIds.length>1000||t.replaceIds.some(x=>!id(x))||!Array.isArray(t.protected)||t.protected.length>100||t.protected.some(p=>!id(p.potId)||!amount(p.minimum)))fail();
+    if(t.applied)validateDecisions({decisions:[{id:'timeline',title:'Zeitplan',start:'2026-01',minFree:0,protected:[],variants:[{id:'timeline',name:'Zeitplan',lines:[],removedIds:[],stress:{monthly:0,once:0,month:'2026-01',potId:''}}],applied:t.applied}]});
+  }
+  for(const x of s.actualExpenses||[]){
+    if(x.kind&&!['expense','income','transfer'].includes(x.kind)||x.planItemId&&!id(x.planItemId)||x.planGroupId&&!id(x.planGroupId)||x.potId&&!id(x.potId)||x.importKey&&(typeof x.importKey!=='string'||x.importKey.length>100)||x.direction&&!['in','out'].includes(x.direction)||x.merchant&&(typeof x.merchant!=='string'||x.merchant.length>160))fail();
+  }
+  if(s.importRules){
+    if(!Array.isArray(s.importRules)||s.importRules.length>5000)fail();
+    for(const r of s.importRules)if(!r||typeof r.merchant!=='string'||r.merchant.length>160||!id(r.category)||!['expense','income','transfer'].includes(r.kind)||r.direction&&!['in','out'].includes(r.direction))fail();
+  }
+  if(s.monthClosures){
+    if(!Array.isArray(s.monthClosures)||s.monthClosures.length>1212||new Set(s.monthClosures.map(c=>c.month)).size!==s.monthClosures.length)fail();
+    for(const c of s.monthClosures)if(!month(c.month)||['opening','income','deposits','withdrawals'].some(k=>c[k]!==undefined&&!amount(c[k]))||!amount(c.available)||!amount(c.assigned)||c.assigned>c.available||!['free','pot'].includes(c.target)||typeof c.signature!=='string'||c.signature.length>100||typeof c.at!=='string'||c.potId&&!id(c.potId)||!Array.isArray(c.itemIds)||c.itemIds.some(x=>!id(x)))fail();
+    else if(c.applied)validateDecisions({decisions:[{id:'closure',title:'Abschluss',start:'2026-01',minFree:0,protected:[],variants:[{id:'timeline',name:'Abschluss',lines:[],removedIds:[],stress:{monthly:0,once:0,month:'2026-01',potId:''}}],applied:c.applied}]});
+  }
 }
