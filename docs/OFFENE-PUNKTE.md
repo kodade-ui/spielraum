@@ -41,6 +41,10 @@ Vorgeschlagen, aber nicht beauftragt: „Monat aussetzen“ bei fester Rate (Ter
 
 Offen aus 3.2.1: gemeldete Einzahlung im Oktober trotz Start im Dezember, mit Testdaten nicht nachstellbar.
 
+## Vorgemerkt für das nächste Update (vom Nutzer gewünscht, 9. Oktober 2026, nach 3.3)
+
+- **Sparen: Reihenfolge und Darstellung.** Zuerst Rücklagen, dann Ziele. Beide Bereiche sollen sich optisch klar unterscheiden. Die Ziele-Kacheln mit Ring sind „ok“ und bleiben. Die Rücklagen sollen prominenter werden, „irgendein Graph oder sowas“. Idee (noch nicht abgestimmt): oben eine Grafik mit dem Verlauf aller Rücklagen über die nächsten zwölf Monate, nach Rücklage aufgeteilt, inklusive der Entnahmen bei Jahreskosten. Darunter die Rücklagen als Zeilen mit Betrag und Mini-Verlauf. Farben mit dem Dataviz-Validator prüfen (hell und dunkel). Kein eigenes Update dafür.
+
 ## Erledigt in 3.3 (9. Oktober 2026)
 
 - Sparen neu: Kacheln statt Liste, ruhige Farben, kein Regler/Fahrplan. Ziele flexibel oder mit fester Rate, Einzahlen, „Was die Rate kostet“, Jahreskosten glätten. Schalter Hell/Dunkel. Details: `docs/AENDERUNGEN-3.3.md`.
