@@ -38,6 +38,15 @@ Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Priorit�
 
 Alle drei Pakete aus dem Rundum-Check und der Wunsch-Fahrplan sind umgesetzt. Vorgeschlagen, aber nicht beauftragt: Kontostand-Abgleich (vom Nutzer vorerst zurückgestellt, Nutzen erschloss sich nicht), Geldfluss-Diagramm, Favoriten in der Schnellerfassung, Backup per Teilen, automatisches Abhaken am Zahlungstag, Suche über Käufe. Hosting-Update-Weg (Worker umbenennen) bleibt umständlich; Pages oder GitHub prüfen.
 
+## Vorgemerkt für das nächste Update (vom Nutzer gewünscht, 9. Oktober 2026)
+
+- Schalter **Automatisch / Hell / Dunkel** in den Einstellungen. Bisher folgt die App nur der Systemeinstellung (`prefers-color-scheme`), ein manuelles Umschalten gibt es nicht. Idee: Wahl lokal speichern (nicht im Datenstand `spielraum.v2`, eigener unkritischer Schlüssel), per `data-theme` am Wurzelelement setzen, `theme-color`-Meta mitführen, Tokens für beide Modi existieren bereits in `app.css`. Kein eigenes Update dafür; wird beim nächsten ohnehin anstehenden Update mitgenommen (SW-Cache dann erhöhen).
+
+- **Bereich Sparen gestalterisch überarbeiten** (Rückmeldung des Nutzers, 9. Oktober 2026): wirkt wie eine lange, volle, gequetschte und unruhige Liste; die Farben gefallen nicht. Wunsch: ruhiger, eleganter, Farben stimmig aufeinander abgestimmt, mehr Luft. Die Töpfe sollen nicht mehr bloß eine Liste sein, sondern eine eigene, schönere Darstellung bekommen (Gestaltungsfreiheit ausdrücklich erteilt, nicht vorher abstimmen). Gilt für Töpfe, Wunsch-Fahrplan und Hero zusammen. Palette mit dem Dataviz-Validator prüfen (hell und dunkel), Screenshots 360/390 px vorher/nachher. Erst beim nächsten Update, nicht einzeln ausliefern.
+
+- **Fehler seit 3.0: Einnahmen, Rücklagen und Topf-Bewegungen lassen sich nicht mehr löschen.** In 2.12 hatte jede Zeile ein Löschen-Kreuz (`delete-item`). Seit 3.0 gibt es „Posten ab … entfernen“ nur im Detailblatt für Ausgaben (`month-ui.js` `itemSheet`); Einnahmen/Rücklagen öffnen direkt den Editor (`itemDialog`), und der hat keinen Löschen-Knopf. Der Handler `delete-item` existiert noch. Lösung: Löschen-Knopf im Editor (bei bestehendem Posten) mit demselben Verhalten wie `deletePost` (inkl. Rückgängig). Test ergänzen.
+- **Bestand eines Topfs anpassen ohne Einnahme:** „Bestand korrigieren“ existiert (`correctPot`, erzeugt keinen Posten), ist im Topfblatt aber nur ein kleiner Textlink unter den großen Knöpfen Einzahlung/Entnahme, die dagegen Planposten anlegen. Wird übersehen. Lösung: im Topfblatt prominent als „Bestand anpassen“ führen, Einzahlung/Entnahme als „einplanen“ benennen und erklären.
+
 ## Erledigt in 2.13 (8. Oktober 2026)
 
 - Code zeilenweise formatiert, nachweislich ohne Verhaltensänderung.
