@@ -1,10 +1,10 @@
 import {createMonthUI} from './month-ui.js';
 import {createSavingsUI} from './savings-ui.js';
 import {createYearUI} from './year-ui.js';
-import {renderPlanChanges,planChanges} from './budget-insights.js';
+import {planChanges} from './budget-insights.js';
 import {createReconciliationUI} from './reconciliation-ui.js';
 import {themeColor} from './theme.js';
-import {KEY,LEGACY_KEY,COLORS,uid,currentMonth,validMonth,shiftMonth,monthName,euro,amountText,compact,fieldMoney,money,blank,validate,parseBackup,migrate,projected,totals,distribution,forecast,removeItem,upsertItem,demo,legacyAnnual} from './planner.js';
+import {KEY,LEGACY_KEY,COLORS,uid,currentMonth,validMonth,shiftMonth,monthName,euro,fieldMoney,money,blank,validate,parseBackup,migrate,projected,totals,distribution,forecast,removeItem,upsertItem,demo,legacyAnnual} from './planner.js';
 import {enhanceState,UPDATE_BACKUP_KEY,suggestCategory,suggestionsForExisting,rememberCategory,capturePlan} from './intelligence.js';
 import {RESERVE_BACKUP_KEY,reserveSummary} from './reserves.js';
 import {createReserveUI} from './reserves-ui.js';
@@ -632,14 +632,6 @@ document.addEventListener('input',event=>{
 document.addEventListener('change',async event=>{
   if(event.target.closest?.('#quick-form')){
     monthUI.quickPreview(event.target.closest('#quick-form'));
-    return;
-  }
-  if(event.target.id==='csv-picker'){
-    try{
-      await reconciliationUI.handleFile(event.target.files?.[0]);
-    }catch(e){
-      toast(e.message);
-    }
     return;
   }
   if(event.target.id==='item-pot'){

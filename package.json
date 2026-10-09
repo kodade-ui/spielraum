@@ -1,6 +1,6 @@
 {
   "name": "spielraum-claude-handoff",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
   "type": "module",
   "engines": { "node": ">=24" },

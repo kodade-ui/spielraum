@@ -1,7 +1,5 @@
-import {renderReconciliationGraphics,renderRemainingGraphic} from './reconciliation-graphics.js';
-import {euro,money,currentMonth,monthName,legacyAnnual,upsertItem} from './planner.js';
+import {euro,money,currentMonth,monthName,upsertItem} from './planner.js';
 import {reconcileMonth,recordPlannedExpense,saveEntryClassification,merchantKey} from './reconciliation.js';
-import {themeColor} from './theme.js';
 export function createPlanPaymentsUI(ctx){
   const {esc,icon}=ctx;
   let editing=null;
@@ -13,15 +11,6 @@ export function createPlanPaymentsUI(ctx){
   };
   const candidates=(r,item)=>r.unlinked.filter(x=>x.category===item.category||merchantKey(x.title)===merchantKey(item.title));
   const isClosed=m=>(ctx.state.monthClosures||[]).some(c=>c.month===m);
-  function dueHint(i){
-    if(i.budgetKind!=='fixed'||!i.open||!i.paymentDay||legacyAnnual(i))return '';
-    const last=new Date(Number(ctx.month.slice(0,4)),Number(ctx.month.slice(5)),0).getDate(),day=Math.min(last,i.paymentDay),past=ctx.month<currentMonth()||ctx.month===currentMonth()&&day<new Date().getDate();
-    return `<p class="checkoff-due ${past?'is-past':''}">${past?'Termin vorbei · noch nicht vollständig erfasst':'Zahlung geplant'} · ${day}. ${monthName(ctx.month)}</p>`;
-  }
-  function renderItem(i,r,closed){
-    const c=ctx.state.categories.find(c=>c.id===i.category),color=themeColor(c?.color||'#4b5660'),percent=i.monthlyAmount?Math.min(100,Math.round(i.paid/i.monthlyAmount*100)):100,pending=candidates(r,i),variable=i.budgetKind==='variable';
-    return `<article class="checkoff-item ${!i.open?'is-complete':''}" style="--post-color:${color}"><div class="checkoff-item-main"><button class="checkoff-tick" data-action="${i.open?'plan-pay-full':'plan-payments'}" data-id="${i.id}" aria-label="${esc(i.title)}: ${i.open?'Restbetrag '+euro(i.open)+' als Ausgabe erfassen':'Zahlungen anzeigen'}" ${closed&&i.open?'disabled':''}>${!i.open?icon('check'):icon('circle')}</button><button class="checkoff-name" data-action="plan-payments" data-id="${i.id}"><strong>${esc(i.title)}</strong><span>${esc(c?.name||'')} · ${i.frequency==='year'?(legacyAnnual(i)?'Zahlungsmonat prüfen':'Jährlich'):i.frequency==='quarter'?'Alle 3 Monate':i.frequency==='once'?'Einmalig':'Monatlich'}</span></button><div class="checkoff-open"><b class="${i.over?'negative':''}">${euro(i.monthlyAmount)}</b><span class="payment-status ${i.over?'over':!i.open?'done':i.paid?'partial':''}">${i.over?'Über Plan':!i.open?'Erfasst':i.paid?'Teilweise':'Offen'}</span></div></div><div class="checkoff-progress"><div role="progressbar" aria-label="${esc(i.title)}: ${euro(i.paid)} erfasst" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><i style="width:${percent}%"></i></div><span>${euro(i.paid)} von ${euro(i.monthlyAmount)}</span></div><p class="payment-remaining ${i.over?'negative':''}">${i.over?euro(i.over)+' über Plan':i.open?euro(i.open)+(variable?' noch im Budget':' noch zu bezahlen'):'Vollständig erfasst'}</p>${dueHint(i)}<div class="checkoff-actions">${!closed?`<button class="btn btn-outline" data-action="plan-pay-part" data-id="${i.id}">${i.paid?'Weitere Ausgabe':'Teilbetrag erfassen'}</button>`:''}<button class="textbtn checkoff-detail-link" data-action="plan-payments" data-id="${i.id}">${pending.length?'Vorhandene zuordnen ('+pending.length+')':'Details'+(i.payments.length?' · '+i.payments.length:'')}</button></div></article>`;
-  }
   function changeKind(id){
     const m=ctx.month,{item}=get(id,m),revision=ctx.state.revision;
     if(isClosed(m))throw Error('Bitte den Monatsabschluss zuerst zurücknehmen.');
@@ -31,10 +20,6 @@ export function createPlanPaymentsUI(ctx){
       if(!['fixed','spread'].includes(pace))throw Error('Bitte eine Einordnung wählen.');
       if(ctx.commitUndo(upsertItem(ctx.state,{...original,pace},id,m),'Einordnung gespeichert'))close();
     });
-  }
-  function render(r,{filter='',kind='all',status='all'}={}){
-    const closed=isClosed(ctx.month),items=r.links.filter(i=>(!filter||i.category===filter)&&(kind==='all'||i.budgetKind===kind)&&(status==='all'||(status==='open'?i.open>0:!i.open))),done=r.links.filter(i=>!i.open).length;
-    return `<section class="plan-checkoff"><div class="spending-heading"><div><span class="goal-kicker">${monthName(ctx.month)}</span><h2>Dein verfügbarer Rahmen</h2></div>${ctx.btn('Ausgabe erfassen','actual-new')}</div><div class="reconcile-income"><span>Einnahmen laut Monatsplan</span><div class="reconcile-income-line"><div><strong>${euro(r.budgetIncome)}</strong><span>${r.incomeSources.length===1?esc(r.incomeSources[0].title):'Einnahmen'}</span></div>${r.reserveWithdrawals?`<button class="reconcile-income-reserve" data-action="spending-flow" data-id="withdrawals"><strong>+ ${euro(r.reserveWithdrawals)}</strong><span>aus Rücklagen · aufschlüsseln</span></button>`:''}</div></div><div class="spending-kpis"><button data-action="spending-flow" data-id="free"><span>Frei nach allen offenen Posten</span><strong class="${r.afterOpen<0?'negative':''}">${euro(r.afterOpen)}</strong><small>Alle geplanten Sparbeträge berücksichtigt</small></button><button data-action="spending-flow" data-id="spent"><span>Bereits ausgegeben</span><strong>${euro(r.actualTotal)}</strong><small>Erfasste Zahlungen ansehen</small></button><button data-action="spending-flow" data-id="bills"><span>Rechnungen offen</span><strong>${euro(r.fixedOpen)}</strong><small>Noch zu bezahlen</small></button><button data-action="spending-flow" data-id="budgets"><span>Variable Budgets übrig</span><strong>${euro(r.variableOpen)}</strong><small>Für weitere Käufe eingeplant</small></button></div>${renderRemainingGraphic(r)}<details class="money-flow"><summary>Geldfluss & Monatsrechnung ansehen</summary>${renderReconciliationGraphics(r)}<div class="reconcile-equation"><span>Nach erfassten Ausgaben und geplanten Sparbeträgen noch übrig</span><b>${euro(r.afterRecorded)}</b></div><p class="helper">Die Rechnung nutzt geplante Einnahmen und Topfentnahmen; sie ist kein Kontostand. Noch nicht erfasste Planposten bleiben reserviert.</p></details>${r.unlinked.length?`<div class="checkoff-unlinked">${r.unlinked.length} Ausgabe${r.unlinked.length===1?'':'n'} ohne Planzuordnung. Zusätzliche Käufe zählen bereits mit. Gehört ein Kauf zu einem Budget, ordne ihn in den Zahlungen zu, damit der offene Planbetrag sinkt. <button class="textbtn" data-action="spending-unlinked">Einträge prüfen</button></div>`:''}<div class="plan-checkoff-heading"><div><span class="goal-kicker">Abhaken oder Teilbetrag erfassen</span><h2>Deine Posten</h2></div><span class="checkoff-count">${done} / ${r.links.length} erfasst</span></div><div class="spending-filters"><button class="${status==='all'?'active':''}" aria-pressed="${status==='all'}" data-action="spending-status" data-id="all">Alle</button><button class="${status==='open'?'active':''}" aria-pressed="${status==='open'}" data-action="spending-status" data-id="open">Offen</button><button class="${status==='done'?'active':''}" aria-pressed="${status==='done'}" data-action="spending-status" data-id="done">Erfasst</button>${filter||kind!=='all'?'<button data-action="spending-clear">Filter aufheben ×</button>':''}</div>${filter?`<p class="selected-category">Kategorie: ${esc(ctx.state.categories.find(c=>c.id===filter)?.name||'')}</p>`:''}<div class="checkoff-list" id="spending-posts">${[['fixed','Feste Rechnungen'],['variable','Variable Budgets']].map(([k,title])=>{const group=items.filter(i=>i.budgetKind===k);return group.length?`<section class="checkoff-group ${k}"><div class="checkoff-group-heading"><h3>${title}</h3><span>${euro(group.reduce((n,i)=>n+i.open,0))} ${k==='fixed'?'offen':'übrig'}</span></div>${group.map(i=>renderItem(i,r,closed)).join('')}</section>`:'';}).join('')||'<p class="quiet-empty">Keine Posten für diese Auswahl. Neue geplante Ausgaben legst Du im Monatsplan an.</p>'}</div>${closed?'<p class="helper spaced">Dieser Monat ist abgeschlossen. Öffne den Abschluss wieder, um Zahlungen zu ändern.</p>':''}</section>`;
   }
   function full(id,bypass=false){
     const m=ctx.month,{r,item}=get(id,m);
@@ -93,5 +78,5 @@ export function createPlanPaymentsUI(ctx){
       if(ctx.commitUndo(n,'Ausgabe entfernt – wieder im Plan offen'))details(plan,month);
     }
   };
-  return {render,actions,preview};
+  return {actions,preview};
 }

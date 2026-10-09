@@ -1,6 +1,6 @@
 # Spielraum
 
-Private Budget-App (PWA) für Monatsplan, Rücklagen, Ausgaben und Ziele.
+Private Budget-App (PWA) mit drei Bereichen: Monat (Plan und Käufe), Sparen (Töpfe und Wünsche), Jahr (zwölf Monate, Verträge, Rückblick).
 
 - **App:** https://spielraum-k7.rotkehlchen42.workers.dev/ (Cloudflare; GitHub Pages derzeit nicht verfügbar)
 - **Datenschutz:** Alle Eingaben bleiben im Browser des jeweiligen Geräts. Dieses Repository enthält nur den Programmcode, keine Finanzdaten. Kein Server, keine Analyse- oder Tracking-Dienste.

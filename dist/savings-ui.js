@@ -1,6 +1,6 @@
 // Bereich „Sparen“ (ab 3.1): Rücklagentöpfe und Ziele in einer Ansicht, mit Sparrechner für Wünsche.
 // Nutzt nur vorhandene Fachfunktionen: reserveSummary, createPot, goalProgress, saveGoal, upsertItem, totals.
-import {euro,amountText,monthName,shiftMonth,validMonth,totals,projected,upsertItem} from './planner.js';
+import {euro,amountText,monthName,shiftMonth,validMonth,currentMonth,totals,projected,upsertItem} from './planner.js';
 import {reserveSummary,createPot} from './reserves.js';
 import {goalProgress,saveGoal,monthsBetween} from './goals.js';
 import {suggestCategory} from './intelligence.js';
@@ -14,16 +14,18 @@ export function createSavingsUI(ctx){
   const short=m=>new Intl.DateTimeFormat('de-DE',{month:'short',year:'numeric'}).format(new Date(m+'-01T12:00:00')).replace('.','');
   const money2=v=>{const [w,c]=amountText(v).split(',');return `${w},<small>${c} €</small>`};
   const goalFor=potId=>S().goals.find(g=>g.status==='active'&&g.potId===potId);
+  // Sparpläne beginnen nie in der Vergangenheit: ab dem Monat nach dem gewählten, frühestens nach dem aktuellen.
+  const firstMonth=()=>shiftMonth(M()>currentMonth()?M():currentMonth(),1);
   const rateFor=(price,months)=>Math.ceil(price/Math.max(1,months)/100)*100;
 
   // Sparrechner: Rate ab dem Folgemonat bis einschließlich Zielmonat, auf volle Euro aufgerundet.
   function plan(g,months){
-    const start=shiftMonth(M(),1),deadline=shiftMonth(start,months-1),rate=rateFor(g.price,months);
+    const start=firstMonth(),deadline=shiftMonth(start,months-1),rate=rateFor(g.price,months);
     const free=reconcileMonth(S(),start).afterOpen;
     return {start,deadline,months,rate,freeAfter:free-rate,free};
   }
   function defaultMonths(g){
-    const start=shiftMonth(M(),1);
+    const start=firstMonth();
     if(g.deadline&&validMonth(g.deadline)&&g.deadline>=start)return Math.min(MAX_MONTHS,monthsBetween(start,g.deadline)+1);
     return 12;
   }

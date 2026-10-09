@@ -1,6 +1,6 @@
 # Architektur und verbindliche Rechenregeln
 
-Diese Beschreibung bezieht sich auf Stand 3.0 (Module) bzw. die unveränderten Rechenregeln seit 2.12. Die Entwicklungshistorie enthält absichtlich auch überholte Beschreibungen.
+Diese Beschreibung bezieht sich auf Stand 3.1 (Module) bzw. die unveränderten Rechenregeln seit 2.12. Die Entwicklungshistorie enthält absichtlich auch überholte Beschreibungen.
 
 ## Module
 
@@ -9,16 +9,16 @@ Diese Beschreibung bezieht sich auf Stand 3.0 (Module) bzw. die unveränderten R
 | `planner.js`, `legacy.js` | Centbeträge, Monatslogik, Validierung, V1-Übernahme, Wiederholung, Änderung und Projektion |
 | `planner-ui.js` | App-Zustand, Rendering, Navigation, Dialoge, Editor, Speicherung, Backup, Import, Undo, PWA |
 | `intelligence.js` | Kategorienkatalog, Stichwortzuordnung, Regeln und Planungssnapshots |
-| `reserves.js`, `reserves-ui.js` | Töpfe, Anfangsbestände, Korrekturen, Bewegungen und Verlauf |
-| `actuals.js`, `actuals-ui.js` | Manuelle Einzelkäufe, Editor, CSV-Export; der ältere getrennte Renderer ist noch im Quellcode |
-| `reconciliation.js`, `reconciliation-ui.js`, `plan-payments-ui.js` | Zusammengeführte Ausgabenansicht, Verknüpfungen, Teilzahlungen, Import, Monatsabschluss |
-| `reconciliation-graphics.js`, `budget-insights.js` | Monatsaufteilung, Restbudget, Kategorien und Erklärung von Planveränderungen |
-| `goals.js`, `goals-ui.js` | Wünsche, Preis, Zielmonat, Topfzuordnung und Sparbedarf |
-| `purchase.js` (Oberfläche seit 3.0 entfernt) | Einfache Kaufprüfung aus einem Ziel, Folgeausgaben, partielle Topffinanzierung, späterer Beginn |
-| `scenarios.js`, `scenarios-schema.js` (Oberfläche seit 3.0 entfernt; `makeJournal` wird weiter genutzt) | Bestehende erweiterte Vergleiche, Vorschau, Übernahmejournal und geschützte Rücknahme |
-| `timeline.js`, `planning-schema.js` (Zeitplan-Oberfläche seit 3.0 entfernt; Schema validiert gespeicherte Daten weiter) | Gemeinsamer Zielzeitplan, Ratenverteilung und zusätzliche Datenvalidierung |
-| `decision-assistant.js` | Deterministische Suche nach Varianten; kein Modellaufruf |
+| `reserves.js`, `reserves-ui.js` | Töpfe, Anfangsbestände, Korrekturen, Bewegungen; UI-Modul nur noch Dialoge (Topf anlegen/bearbeiten, Bestand, Einzahlung/Entnahme) |
+| `actuals.js`, `actuals-ui.js` | Manuelle Einzelkäufe und ihr Dialog |
+| `reconciliation.js` | Plan gegen Käufe (`reconcileMonth`), Zahlungen zu Planposten, Klassifizierung; CSV- und Abschlusslogik nur noch für gespeicherte Altdaten |
+| `reconciliation-ui.js`, `plan-payments-ui.js` | Dialoge: Kauf zuordnen, Zahlungen eines Planpostens, Teilbetrag, Einordnung fest/variabel, Abschluss zurücknehmen |
+| `budget-insights.js` | `planChanges`: Erklärung der Veränderung gegenüber dem Vormonat |
+| `goals.js`, `goals-ui.js` | Wünsche, Preis, Zielmonat, Topfzuordnung und Sparbedarf; UI-Modul nur noch Ziel-Dialog und Aktionen |
+| `scenarios.js`, `scenarios-schema.js`, `planning-schema.js` | Übernahmejournal (`makeJournal`/`undoJournal`) und Validierung gespeicherter Entscheidungen, Zeitpläne, Importregeln und Abschlüsse; keine Oberfläche |
 | `month-ui.js` | Bereich „Monat“: Hauptzahl, Aufteilungsbalken, Postenliste, Schnellerfassung, Detailblatt |
+| `savings-ui.js` | Bereich „Sparen“: Töpfe mit Zielstatus, Topfblatt, Wünsche mit Terminschieber, „Sparplan starten“ |
+| `year-ui.js` | Bereich „Jahr“: zwölf Monate frei mit Sonderzahlungen, Abos & Verträge mit Jahreskosten, Rückblick Vormonat |
 | `theme.js`, `app.css` | Kategorienfarben und das einzige Stylesheet (Tokens hell/dunkel) |
 | `sw.js`, `manifest.webmanifest` | Offline-Shell und Installationsidentität |
 
@@ -88,19 +88,20 @@ Unzugeordnete Käufe zählen als tatsächliche Ausgaben. Gehören sie zu einem b
 
 Monatsabschlüsse benötigen explizite Bestätigung tatsächlicher Beträge/Vollständigkeit. Der positive Rest kann einmalig in den nächsten Monat übertragen werden; es gibt geschützte Rücknahme und abhängige Folgeabschlüsse. Nicht pauschal aus fehlenden Ausgabeeinträgen eine Ersparnis ableiten.
 
-## Ziele und Kaufprüfung
+## Ziele und Sparplan
 
 - Ein Ziel allein erzeugt keine Budgetbelastung. Ein Topf darf nur einem offenen Ziel zugeordnet sein.
-- `purchaseDraft` erzeugt nur einen temporären Vergleich, keinen gespeicherten Plan.
-- Preis, Kaufmonat, zusätzliche monatliche Folgekosten, expliziter Topfbetrag und Mindestspielraum sind Eingaben.
-- Eine partielle Finanzierung erzeugt im Vergleich einmal den Kaufpreis als Ausgabe und separat die angegebene Topfentnahme als Einnahme.
-- Prüfung: zwölf Monate ab Kaufmonat, einschließlich geschützter Mindeststände aus dem Zielzeitplan. Bei Unterschreitung Suche bis zu 24 spätere Startmonate.
-- Freie künftige Überschüsse werden nicht automatisch in einem Topf angespart.
-- Die Übernahme legt neue Budgetposten an und erfordert Vorschau/Bestätigung. ID `purchase_<goalId>` verhindert eine zweite aktive Übernahme desselben Ziels.
-- `makeJournal`/`undoJournal` sichern betroffene Posten und Serien; neuere Änderungen blockieren eine unsichere Rücknahme.
-- Das Ziel selbst wird bei Übernahme nicht als gekauft markiert; ursprünglicher Zielpreis und Wunschdatum werden nicht automatisch geändert. Die übernommenen Planposten enthalten die tatsächlich gewählte Variante.
-- Auswirkungen anderer Ziele vergleichen deren Topfdeckung. Keine automatische Neuverteilung aller Sparraten und kein Terminversprechen für Ziele ohne Topf.
-- Der separate gemeinsame Zeitplan berücksichtigt 36 Monate, Prioritäten und feste/flexible Termine. Auch dort gibt es eine ausdrückliche Übernahme.
+- Ein Wunsch ist ein offenes Ziel ohne Topf. Der Sparrechner teilt den Preis durch die gewählte Monatszahl (1–60) und rundet auf volle Euro auf. Er beginnt im Monat nach dem gewählten, frühestens nach dem aktuellen Monat. Vorhandenes Geld zählt erst über einen Topf.
+- „Sparplan starten“ ist eine einzige rückgängig machbare Änderung: neuer Topf (Bestand 0 € ab Startmonat), Ziel bekommt Topf und Zieldatum (= letzter Ratenmonat), monatliche Sparposten mit Ende im Zielmonat. Ein Wunsch mit Topf kann nicht erneut gestartet werden.
+- Der Status eines Ziels mit Topf kommt aus `goalProgress` und berücksichtigt alle geplanten Ein- und Auszahlungen bis zum Termin.
+- Die frühere Kaufprüfung, Szenarien und der gemeinsame Zeitplan sind entfernt. Gespeicherte `decisions` und `timeline` bleiben gültig und werden nicht verändert.
+
+## Jahr
+
+- Die zwölf Werte sind `reconcileMonth(Monat).afterOpen`, also dieselbe Definition wie „Noch frei“ im Monat. Die Summe oben addiert sie; sie ist kein Kontostand.
+- Sonderzahlungen sind Ausgaben mit Rhythmus vierteljährlich, jährlich (Zahlungsmonat) oder einmalig. Einmalige Abweichungen eines Monatspostens (gleiche `groupId`) und unbestätigte alte Jahresanteile zählen nicht dazu.
+- Abos & Verträge: wiederkehrende Ausgaben je Gruppe in der Version, die im gewählten Monat gilt (sonst die nächste künftige), wenn sie fest eingeordnet sind oder der Name eindeutig nach Vertrag klingt. Jahreskosten = monatlich × 12, vierteljährlich × 4, jährlich × 1.
+- Rückblick: `reconcileMonth` des Vormonats, je Kategorie geplant gegen erfasst; nicht abgehakte feste Rechnungen werden genannt.
 
 ## Grafik- und Vergleichssemantik
 

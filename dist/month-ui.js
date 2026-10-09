@@ -94,7 +94,7 @@ export function createMonthUI(ctx){
     const addLine=(action,label)=>`<button class="add-line" data-action="${action}">${icon('plus')}${label}</button>`;
     const all=r.expenses.slice().sort((a,b)=>b.date.localeCompare(a.date)||a.title.localeCompare(b.title,'de'));
     return `${hero(r,t)}
-${closed(m)?'<p class="notice">Dieser Monat ist abgeschlossen. Erfasste Beträge lassen sich nicht mehr ändern.</p>':''}
+${closed(m)?'<div class="notice"><span>Dieser Monat wurde mit einer früheren Version abgeschlossen. Erfasste Beträge sind gesperrt.</span><button class="textbtn" data-action="month-reopen">Wieder öffnen</button></div>':''}
 ${section('Rechnungen',r.fixedOpen?euro(r.fixedOpen)+' gehen noch ab':bills.length?'alles bezahlt':'',bills.map(billRow),addLine('new-expense','Rechnung oder Budget'))}
 ${budgets.length?section('Budgets',r.variableOpen?euro(r.variableOpen)+' übrig':'aufgebraucht',budgets.map(budgetRow),''):''}
 ${loose.length?section('Ohne Budget',euro(loose.reduce((n,x)=>n+x.amount,0)),loose.map(x=>looseRow(r,x)),linkable>1&&!closed(m)?`<button class="add-line" data-action="month-link-all">${icon('check')}Alle ${linkable} passend zuordnen</button>`:''):''}

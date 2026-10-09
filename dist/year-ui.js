@@ -6,6 +6,8 @@ import {paceFor} from './intelligence.js';
 import {themeColor} from './theme.js';
 
 const MONTHS=12;
+// Auch Posten in variablen Kategorien zählen als Vertrag, wenn der Name eindeutig danach klingt (z. B. „Handyvertrag“ unter Sonstiges).
+const CONTRACT_WORDS=/abo|vertrag|mitglied|beitrag|versicherung|handy|mobilfunk|lizenz|gebühr|miete|leasing|rate\b/i;
 export function createYearUI(ctx){
   const {esc,icon}=ctx;
   const S=()=>ctx.state,M=()=>ctx.month;
@@ -40,7 +42,7 @@ export function createYearUI(ctx){
       const key=i.groupId||i.id,now=i.start<=m,cur=groups.get(key);
       if(!cur||(now&&!cur.now)||(now&&cur.now&&i.start>cur.i.start)||(!now&&!cur.now&&i.start<cur.i.start))groups.set(key,{i,now});
     }
-    return [...groups.values()].map(x=>x.i).filter(i=>paceFor(S(),i)==='fixed').map(i=>({...i,yearly:legacyAnnual(i)||i.frequency==='year'?i.amount:i.frequency==='quarter'?i.amount*4:i.amount*12})).sort((a,b)=>b.yearly-a.yearly||a.title.localeCompare(b.title,'de'));
+    return [...groups.values()].map(x=>x.i).filter(i=>paceFor(S(),i)==='fixed'||CONTRACT_WORDS.test(i.title)).map(i=>({...i,yearly:legacyAnnual(i)||i.frequency==='year'?i.amount:i.frequency==='quarter'?i.amount*4:i.amount*12})).sort((a,b)=>b.yearly-a.yearly||a.title.localeCompare(b.title,'de'));
   }
   function contractsHTML(){
     const list=contracts(),total=list.reduce((n,i)=>n+i.yearly,0),m=M();

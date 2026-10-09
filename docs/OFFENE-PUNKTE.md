@@ -4,15 +4,21 @@
 
 Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Prioritäten: (1) größere Anschaffungen durchspielen, (2) weniger manuelle Arbeit, (3) Wünsche zeitlich miteinander vereinbaren. Keine zweite Bankbuchhaltung, keine erneute Analyse-Hauptnavigation. Datenerhalt hat Vorrang vor einem technisch bequemen Neubau.
 
-## Tatsächlich vorhanden
+## Tatsächlich vorhanden (3.1)
 
-- Vier Hauptbereiche: Monatsplan, Rücklagen, Ausgaben, Ziele.
+- Drei Bereiche: Monat, Sparen, Jahr; Plus-Taste für die Schnellerfassung.
 - Sofortige Monatsprojektion, erweiterbare Kategorien, monatliche/vierteljährliche/jährliche/einmalige Posten.
-- Verknüpfte Rücklagentöpfe mit Anfangsbeständen und geplanten Bewegungen.
-- Eine gemeinsame Ausgabenansicht mit Abhaken, Teilbeträgen, zusätzlichen Einkäufen, Zuordnung, Diagrammen und Journal.
-- Optionale lokale CSV-Verarbeitung und bestätigter Monatsabschluss. Kein Bankkonto verbunden.
-- Ziele, Zielzeitplan, „Kauf prüfen“ direkt am Ziel, fortgeschrittene alte Szenarien hinter einer sekundären Aufklappfunktion.
-- Lokale Speicherung, Datei-Backup, Wiederherstellung, PWA-Installation und Offline-Shell.
+- Monat: eine Hauptzahl „Noch frei“, Rechnungen abhaken, Budgets mit Rest, Käufe ohne Budget mit Zuordnung, Detailblatt.
+- Sparen: Töpfe mit Zielstatus, Wünsche mit Terminschieber und „Sparplan starten“.
+- Jahr: zwölf Monate frei mit Sonderzahlungen, Abos & Verträge mit Jahreskosten, Rückblick auf den Vormonat.
+- Lokale Speicherung, Datei-Backup, Wiederherstellung, PWA-Installation und Offline-Shell. Kein Bankkonto verbunden.
+
+## Erledigt in 3.1 (9. Oktober 2026) · Paket 2 und 3
+
+- Rücklagen und Ziele als ein Bereich „Sparen“, Sparrechner mit Schieber, Sparplan mit einem Tipp.
+- Bereich „Jahr“ ersetzt „Ein Blick nach vorn“.
+- Entfernte Funktionen auch im Code aufgeräumt (Module, Renderer, Tests, CSS). Datenvalidierung für Altdaten bleibt.
+- Details: `docs/AENDERUNGEN-3.1.md`.
 
 ## Erledigt in 3.0 (8. Oktober 2026) · Paket 1
 
@@ -22,10 +28,9 @@ Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Priorit�
 - Kauf prüfen, Szenarien, Zeitplan, CSV-Import, Monatsabschluss aus der Oberfläche entfernt (Daten bleiben).
 - Neues Logo, Icons als Dateien, Startfarben passend zur App.
 
-## Nächste freigegebene Pakete
+## Nächste Schritte
 
-- **Paket 2 · Sparen:** Rücklagen und Ziele in einem Bereich, Sparrechner mit Terminschieber, Logik- und Testaufräumen der entfernten Funktionen.
-- **Paket 3 · Jahr:** Zwölf-Monats-Leiste mit Spitzen (ersetzt „Ein Blick nach vorn“), Abos & Verträge mit Jahreskosten, Monatsrückblick Plan gegen Ist.
+Alle drei Pakete aus dem Rundum-Check sind umgesetzt. Weitere Arbeit erst nach Rückmeldung des Nutzers vom echten Handy, insbesondere zu Schieber, Jahresbalken und Lesbarkeit.
 
 ## Erledigt in 2.13 (8. Oktober 2026)
 
@@ -62,13 +67,12 @@ Die Bitte um dieses Übergabepaket ist keine neue Freigabe, diese Punkte sofort 
 
 ## Technische Punkte für den nächsten Review
 
-- CSS besteht aus einer gewachsenen Basis mit vielen Überschreibungen plus `refinement.css`. Konsolidierung kann sinnvoll sein, muss aber anhand tatsächlich gerenderter Ansichten erfolgen.
-- JavaScript ist stellenweise sehr dicht formatiert. Eine gezielte Formatierung könnte die Wartung verbessern; keinen vollständigen Rewrite daraus ableiten.
-- Der frühere getrennte Ausgabenrenderer und erweiterte Szenarien existieren weiter im Code. Nicht unbesehen löschen, bevor Aktionshandler/Export/alte Daten geprüft sind.
+- Seit 3.0 gibt es ein Stylesheet `app.css` mit Tokens; seit 3.1 ohne Regeln für entfernte Ansichten.
+- Seit 3.1 sind alte Renderer, Kaufprüfung, Zeitplan und Entscheidungsassistent gelöscht. `scenarios.js` bleibt für das Übernahmejournal; Schemadateien validieren Altdaten.
 - Ziele ohne Topf lassen sich in der Deckungsprognose nicht verlässlich terminieren. Diese Grenze ist sichtbar zu machen, nicht durch erfundene Prognosen zu ersetzen.
 - Viele Filter-/Diagrammwechsel rendern den Bereich neu. Scrollposition, Fokus und geöffnete Details auf dem echten Handy prüfen.
 - Automatisches Neuladen bei Updates wurde nicht als neuer vollständiger Update-Dialog umgesetzt. Identität und vorhandene Daten erhalten; PWA-Cache gezielt versionieren.
-- Monatsabschlussregeln in allen Bearbeitungswegen prüfen, insbesondere CSV-Import und historische Planänderungen. Es gibt bestehende Signatur-/Rücknahmeprüfungen; keine unbelegte Zusicherung, dass jeder Weg abgeschlossen gesperrt ist.
+- Monatsabschlüsse lassen sich nicht mehr anlegen. Für mit älteren Versionen abgeschlossene Monate zeigt „Monat“ „Wieder öffnen“.
 - Kein aktueller physischer Android-Test und keine vollständige visuelle Abnahme. Die synthetischen UI-Tests beweisen weder Layoutqualität noch Touch-Ergonomie.
 
 ## Akzeptanz für ein künftiges Umsetzungspaket
