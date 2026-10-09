@@ -1,5 +1,5 @@
-const CACHE = 'spielraum-shell-v3-1';
-const ASSETS = ['./app.css', './planner-ui.js', './month-ui.js', './planner.js', './legacy.js', './intelligence.js', './reserves.js', './reserves-ui.js', './actuals.js', './actuals-ui.js', './goals.js', './goals-ui.js', './reconciliation.js', './reconciliation-ui.js', './plan-payments-ui.js', './reconciliation-graphics.js', './budget-insights.js', './planning-schema.js', './scenarios.js', './scenarios-schema.js', './theme.js', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './apple-touch-icon.png', './icon-shortcut-192.png'];
+const CACHE = 'spielraum-shell-v3-2';
+const ASSETS = ['./app.css', './planner-ui.js', './month-ui.js', './savings-ui.js', './year-ui.js', './planner.js', './legacy.js', './intelligence.js', './reserves.js', './reserves-ui.js', './actuals.js', './actuals-ui.js', './goals.js', './goals-ui.js', './reconciliation.js', './reconciliation-ui.js', './plan-payments-ui.js', './reconciliation-graphics.js', './budget-insights.js', './planning-schema.js', './scenarios.js', './scenarios-schema.js', './theme.js', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './apple-touch-icon.png', './icon-shortcut-192.png'];
 self.addEventListener('install', event => event.waitUntil((async () => {
   const cache = await caches.open(CACHE);
   await cache.addAll(ASSETS.map(url=>new Request(url,{credentials:'include',cache:'reload'})));

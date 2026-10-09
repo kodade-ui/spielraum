@@ -1,4 +1,6 @@
 import {createMonthUI} from './month-ui.js';
+import {createSavingsUI} from './savings-ui.js';
+import {createYearUI} from './year-ui.js';
 import {renderPlanChanges,planChanges} from './budget-insights.js';
 import {createReconciliationUI} from './reconciliation-ui.js';
 import {themeColor} from './theme.js';
@@ -12,19 +14,24 @@ import {actualSummary} from './actuals.js';
 const FLOW_BACKUP_KEY='spielraum.before-cashflow-2026-09';
 const $=q=>document.querySelector(q);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const paths={jar:'M8 3h8M9 3v3.6C6.6 7.5 5 9.6 5 12.2V18a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-5.8c0-2.6-1.6-4.7-4-5.6V3M8.5 14h7',target:'M12 21a9 9 0 1 0 0-18a9 9 0 0 0 0 18zM12 16.5a4.5 4.5 0 1 0 0-9a4.5 4.5 0 0 0 0 9zM12 12.5v-1',mark:'M5 18C5 8 19 16 19 6M5 13C5 3 19 11 19 1M5 23C5 13 19 21 19 11',plus:'M12 5v14M5 12h14',close:'M6 6l12 12M6 18L18 6',left:'M15 6l-6 6 6 6',right:'M9 6l6 6-6 6',down:'M12 4v16M6 14l6 6 6-6',up:'M12 20V4M6 10l6-6 6 6',arrow:'M6 18L18 6M6 6h12v12',wallet:'M3 6h18v14H3zM3 6l14-3v3M16 12h5v4h-5z',chart:'M12 3v9h9M9 3.5a9 9 0 1 0 11.5 11.5',settings:'M4 7h16M4 17h16M8 4v6M16 14v6',lock:'M6 10h12v11H6zM8 10V6a4 4 0 0 1 8 0v4',search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14M15 15l6 6',repeat:'M3 8h14a4 4 0 0 1 4 4M3 8l4-4M3 8l4 4M21 16H7a4 4 0 0 1-4-4M21 16l-4 4M21 16l-4-4',home:'M3 10l9-7 9 7M5 9v12h14V9M9 21v-8h6v8',bag:'M4 7h16l-1 14H5L4 7zM8 7V5a4 4 0 0 1 8 0v2',travel:'M4 16h16V7H4zM7 16v3M17 16v3M4 11h16M7 14h.01M17 14h.01',sun:'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1 1M18 18l1 1M5 19l1-1M18 6l1-1',heart:'M12 21L3 12C-3 4 8 0 12 7C16 0 27 4 21 12z',spark:'M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z',save:'M4 3h13l4 4v14H3V3zM7 3v6h9V3M7 21v-8h10v8',download:'M12 3v12M7 10l5 5 5-5M4 16v5h16v-5',edit:'M14 5l5 5M4 20l5-1L21 7l-5-5L4 14v6z',check:'M4 12l5 5L20 6',trash:'M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7',calendar:'M3 6h18v15H3zM7 3v6M17 3v6M3 12h18',circle:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18',ring:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8',info:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 11v6M12 7h.01',undo:'M8 4L3 9l5 5M3 9h11a6 6 0 0 1 0 12'};
+const paths={bars:'M5 20v-8M10 20V5M15 20v-5M20 20V9M3 20h18',jar:'M8 3h8M9 3v3.6C6.6 7.5 5 9.6 5 12.2V18a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-5.8c0-2.6-1.6-4.7-4-5.6V3M8.5 14h7',target:'M12 21a9 9 0 1 0 0-18a9 9 0 0 0 0 18zM12 16.5a4.5 4.5 0 1 0 0-9a4.5 4.5 0 0 0 0 9zM12 12.5v-1',mark:'M5 18C5 8 19 16 19 6M5 13C5 3 19 11 19 1M5 23C5 13 19 21 19 11',plus:'M12 5v14M5 12h14',close:'M6 6l12 12M6 18L18 6',left:'M15 6l-6 6 6 6',right:'M9 6l6 6-6 6',down:'M12 4v16M6 14l6 6 6-6',up:'M12 20V4M6 10l6-6 6 6',arrow:'M6 18L18 6M6 6h12v12',wallet:'M3 6h18v14H3zM3 6l14-3v3M16 12h5v4h-5z',chart:'M12 3v9h9M9 3.5a9 9 0 1 0 11.5 11.5',settings:'M4 7h16M4 17h16M8 4v6M16 14v6',lock:'M6 10h12v11H6zM8 10V6a4 4 0 0 1 8 0v4',search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14M15 15l6 6',repeat:'M3 8h14a4 4 0 0 1 4 4M3 8l4-4M3 8l4 4M21 16H7a4 4 0 0 1-4-4M21 16l-4 4M21 16l-4-4',home:'M3 10l9-7 9 7M5 9v12h14V9M9 21v-8h6v8',bag:'M4 7h16l-1 14H5L4 7zM8 7V5a4 4 0 0 1 8 0v2',travel:'M4 16h16V7H4zM7 16v3M17 16v3M4 11h16M7 14h.01M17 14h.01',sun:'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1 1M18 18l1 1M5 19l1-1M18 6l1-1',heart:'M12 21L3 12C-3 4 8 0 12 7C16 0 27 4 21 12z',spark:'M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z',save:'M4 3h13l4 4v14H3V3zM7 3v6h9V3M7 21v-8h10v8',download:'M12 3v12M7 10l5 5 5-5M4 16v5h16v-5',edit:'M14 5l5 5M4 20l5-1L21 7l-5-5L4 14v6z',check:'M4 12l5 5L20 6',trash:'M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7',calendar:'M3 6h18v15H3zM7 3v6M17 3v6M3 12h18',circle:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18',ring:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8',info:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 11v6M12 7h.01',undo:'M8 4L3 9l5 5M3 9h11a6 6 0 0 1 0 12'};
 const icon=name=>`<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name]||paths.wallet}"/></svg>`;
 const categoryIcon=id=>['home','bag','travel','sun','bag','heart','repeat','wallet'][Number(id.replace('c',''))]||'wallet';
-let goalMode='wishes';
-let state=enhanceState(blank()),loadedRaw=null,loadError='',saveError='',month=currentMonth(),view='plan',itemFilter='all',categoryFilter=null,query='',searchVisible=false,chartMode='all',chartShape='ring',selectedSlice=null,allLegend=false,demoMode=false,realState=null,undo=null,installPrompt=null,submitHandler=null,editContext=null,forecastMonths=6,installHealth=null,swError='',swRegistration=null;
-const reserveUI=createReserveUI({get state(){return state},get month(){return month},esc,icon,btn:(...args)=>btn(...args),openDialog,persist,itemDialog,formError,confirmDialog,commitUndo,render});
+let state=enhanceState(blank()),loadedRaw=null,loadError='',saveError='',month=currentMonth(),view='plan',itemFilter='all',categoryFilter=null,query='',searchVisible=false,selectedSlice=null,allLegend=false,demoMode=false,realState=null,undo=null,installPrompt=null,submitHandler=null,editContext=null,installHealth=null,swError='',swRegistration=null;
+const reserveUI=createReserveUI({get state(){return state},get month(){return month},esc,icon,btn:(...args)=>btn(...args),openDialog,persist,itemDialog,formError,confirmDialog,commitUndo,render,showPot:id=>savingsUI.actions['savings-pot']({dataset:{id}})});
 const actualUI=createActualUI({get state(){return state},get month(){return month},setMonth:m=>{month=m},esc,icon,btn:(...args)=>btn(...args),openDialog,persist,commitUndo,download,render});
-const goalUI=createGoalUI({get state(){return state},get month(){return month},esc,icon,btn:(...a)=>btn(...a),openDialog,persist,commitUndo,confirmDialog,itemDialog,render,showPot:id=>reserveUI.actions['pot-detail']({dataset:{id}})});
+const goalUI=createGoalUI({get state(){return state},get month(){return month},esc,icon,btn:(...a)=>btn(...a),openDialog,persist,commitUndo,confirmDialog,itemDialog,render,showPot:id=>savingsUI.actions['savings-pot']({dataset:{id}})});
 const reconciliationUI=createReconciliationUI({get state(){return state},get month(){return month},esc,icon,btn:(...a)=>btn(...a),openDialog,persist,commitUndo,confirmDialog,render});
 const monthUI=createMonthUI({get state(){return state},get month(){return month},esc,icon,openDialog,commitUndo,itemDialog:(...a)=>itemDialog(...a),closeDialog:()=>{$('#dialog').close();editContext=null},deleteItem:id=>deletePost(id)});
-function goalsArea(){
-  return goalUI.render();
-}
+const savingsUI=createSavingsUI({get state(){return state},get month(){return month},esc,icon,openDialog,commitUndo,closeDialog:()=>{$('#dialog').close();editContext=null}});
+const yearUI=createYearUI({get state(){return state},get month(){return month},esc,icon,render,openMonth:m=>{
+  if(!validMonth(m))return;
+  month=m;
+  view='plan';
+  render();
+  window.scrollTo({top:0,behavior:'instant'});
+}});
+const VIEWS={plan:'Monat',savings:'Sparen',year:'Jahr'},OLD_VIEWS={reserves:'savings',goals:'savings'};
 
 const toastEl=$('#toast');
 function toast(message,canUndo=false){
@@ -111,16 +118,6 @@ function persist(next,message='Gespeichert',{restore=false,keepUndo=false,captur
 const category=id=>state.categories.find(c=>c.id===id)||state.categories.at(-1);
 const allOptions=(value)=>[...state.categories].sort((a,b)=>a.name.localeCompare(b.name,'de')).map(c=>`<option value="${c.id}" ${c.id===value?'selected':''}>${esc(c.name)}</option>`).join('');
 const btn=(label,action,style='primary',ico='plus',extra='')=>`<button class="btn btn-${style}" data-action="${action}" ${extra}>${ico?icon(ico):''}${label}</button>`;
-function forecastSVG(){
-  const points=forecast(state,month,forecastMonths);
-  if(!points.some(p=>p.income||p.planned))return '<div class="empty-state"><div class="empty-icon">'+icon('chart')+'</div><p>Deine Monatsvorschau füllt sich automatisch, sobald Du einen Posten anlegst.</p></div>';
-  const W=430,H=195,L=49,R=12,T=20,B=34,rawMax=Math.max(0,...points.map(p=>p.remaining)),rawMin=Math.min(0,...points.map(p=>p.remaining)),pad=Math.max(10000,(rawMax-rawMin)*.13),max=rawMax+pad,min=rawMin<0?rawMin-pad:0,range=max-min,x=i=>L+i*(W-L-R)/(points.length-1||1),y=v=>T+(H-T-B)*(max-v)/range,coords=points.map((p,i)=>[x(i),y(p.remaining)]),line=coords.map((p,i)=>`${i?'L':'M'}${p[0].toFixed(2)} ${p[1].toFixed(2)}`).join(' ');
-  return `<svg class="forecast-chart" id="forecast-svg" viewBox="0 0 ${W} ${H}" role="group" aria-label="Geplanter freier Betrag in den kommenden ${forecastMonths} Monaten"><defs><linearGradient id="forecast-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#60746a" stop-opacity=".3"/><stop offset="1" stop-color="#60746a" stop-opacity=".02"/></linearGradient></defs>${[0,.5,1].map(f=>{const value=min+(max-min)*f;return `<path class="gridline" d="M${L} ${y(value)}H${W-R}"/><text x="${L-9}" y="${y(value)+4}" text-anchor="end">${compact(value)}</text>`}).join('')}<path d="${line}L${x(points.length-1)} ${y(0)}L${L} ${y(0)}Z" fill="url(#forecast-fill)"/><path d="${line}" fill="none" stroke="#315d54" stroke-width="2.7" stroke-linejoin="round"/>${rawMin<0?`<path d="M${L} ${y(0)}H${W-R}" stroke="#b4b1a5" stroke-dasharray="4 4"/>`:''}${points.map((p,i)=>`<g class="forecast-point" role="button" tabindex="0" data-forecast-month="${p.month}" aria-label="${monthName(p.month)}: ${euro(p.remaining)} frei"><circle cx="${x(i)}" cy="${y(p.remaining)}" r="12" fill="transparent"/><circle cx="${x(i)}" cy="${y(p.remaining)}" r="4" fill="#315d54" stroke="white" stroke-width="2"/><title>${monthName(p.month)} · ${euro(p.remaining)} frei</title></g>${forecastMonths<=6||i%2===0?`<text x="${x(i)}" y="${H-7}" text-anchor="middle">${new Intl.DateTimeFormat('de-DE',{month:'short'}).format(new Date(p.month+'-01T12:00:00'))}</text>`:''}`).join('')}</svg>`;
-}
-function forecastHTML(large=false){
-  const points=forecast(state,month,forecastMonths),sum=points.reduce((n,p)=>n+p.remaining,0);
-  return `<section class="surface forecast-card"><div class="section-head"><div><h2>Ein Blick nach vorn</h2><p>Was Dir in den nächsten Monaten bleibt.</p></div>${large?'<select id="forecast-range" aria-label="Zeitraum"><option value="6" '+(forecastMonths===6?'selected':'')+'>6 Monate</option><option value="12" '+(forecastMonths===12?'selected':'')+'>12 Monate</option></select>':''}</div>${forecastSVG()}<div class="chart-info"><span>Freier Betrag über ${forecastMonths} Monate</span><strong>${euro(sum)}</strong></div><p class="note">Summe Deiner geplanten Überschüsse. Monatliche Posten laufen weiter, einmalige nur im gewählten Monat. Kein Kontostand und keine Prognose ungeplanter Ausgaben.</p></section>`;
-}
 function reviewCategories(){
   const choices=suggestionsForExisting(state);
   openDialog('Zuordnungen prüfen',`<form><p class="bodycopy">Nur ausgewählte Posten werden umgeordnet. Beträge, Namen und Zeiträume bleiben erhalten.</p><div class="suggestion-list">${choices.map(({item,suggestion})=>`<label class="suggestion-row"><input type="checkbox" name="pick" value="${item.id}" checked><span><strong>${esc(item.title)}</strong><small>${monthName(item.start,true)} · Sonstiges → ${esc(category(suggestion.id).name)}</small></span></label>`).join('')||'<p class="helper">Aktuell keine neuen Vorschläge.</p>'}</div><div class="form-footer"><button type="button" class="btn btn-outline" data-action="close">Abbrechen</button>${choices.length?'<button class="btn btn-primary" type="submit">Auswahl übernehmen</button>':''}</div></form>`,form=>{
@@ -189,10 +186,11 @@ function reviewAnnual(){
 }
 const LOGO='<svg class="logo" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="116" fill="var(--logo-bg)"/><path d="M347.4 327.4A116 116 0 1 1 284.1 143.4" fill="none" stroke="var(--logo-ring)" stroke-width="56" stroke-linecap="round"/><path d="M339.4 175.4A116 116 0 0 1 371.9 260.0" fill="none" stroke="var(--logo-gold)" stroke-width="56" stroke-linecap="round"/></svg>';
 function render(){
-  const t=totals(state,month),titles={plan:'Monat',reserves:'Rücklagen',goals:'Ziele'};
+  const t=totals(state,month),titles=VIEWS;
+  view=OLD_VIEWS[view]||view;
   if(!titles[view])view='plan';
   const tab=(v,ico)=>`<button data-view="${v}" class="${view===v?'active':''}" ${view===v?'aria-current="page"':''}>${icon(ico)}<span>${titles[v]}</span></button>`;
-  $('#app').innerHTML=`<header class="topbar"><span class="brand" title="Spielraum">${LOGO}<span class="visually-hidden">Spielraum</span></span><div class="monthpicker"><button class="iconbtn" data-action="prev" aria-label="Vorheriger Monat" ${month==='2000-01'?'disabled':''}>${icon('left')}</button><button class="month-button" data-action="month" aria-label="Monat wählen, aktuell ${monthName(month)}">${monthName(month)}</button><button class="iconbtn" data-action="next" aria-label="Nächster Monat" ${month==='2100-12'?'disabled':''}>${icon('right')}</button></div><button class="iconbtn" data-action="settings" aria-label="Daten, Backup und Einstellungen">${icon('settings')}</button></header><main class="main view-${view}">${demoMode?'<div class="notice">'+icon('spark')+'<span><strong>Beispielplan</strong> · Deine eigenen Daten bleiben unverändert.</span><button class="textbtn" data-action="demo">Beenden</button></div>':''}${loadError||saveError?'<div class="notice error" role="alert"><span>'+esc(loadError||saveError)+'</span><button class="textbtn" data-action="settings">Daten & Backup</button></div>':''}${state.settings.migrated&&!state.settings.migrationSeen?'<div class="notice"><span><strong>Deine bisherigen Posten sind übernommen.</strong> Bei älteren Jahresposten bitte den Zahlungsmonat bestätigen.</span><button class="textbtn" data-action="migration-seen">Verstanden</button></div>':''}${view!=='plan'?`<h1 class="view-title">${titles[view]}</h1>`:''}${view==='plan'&&!demoMode&&!t.items.length?'<div class="notice"><span>Starte mit Deinem Einkommen oder sieh Dir einen Beispielplan an.</span><button class="textbtn" data-action="demo">Beispiel ansehen</button></div>':''}${annualNotice()}${view==='plan'?monthUI.render()+(t.items.length?forecastHTML():''):view==='reserves'?reserveUI.render():goalsArea()}${!demoMode&&(state.items.length||state.pots.length||state.actualExpenses.length||state.goals.length)&&(!state.settings.lastBackup||Date.now()-Date.parse(state.settings.lastBackup)>14*86400000)?'<div class="notice backup">'+icon('save')+'<span>'+(state.settings.lastBackup?'Dein letztes Backup ist über zwei Wochen alt.':'Noch kein Backup gespeichert.')+'</span><button class="textbtn" data-action="backup">Sichern</button></div>':''}<p class="footer-note">${icon('lock')}Gespeichert nur auf diesem Gerät</p></main><nav class="tabbar" aria-label="Hauptnavigation">${tab('plan','wallet')}${tab('reserves','jar')}<button class="fab" data-action="quick-add" aria-label="Ausgabe erfassen">${icon('plus')}</button>${tab('goals','target')}</nav>`;
+  $('#app').innerHTML=`<header class="topbar"><span class="brand" title="Spielraum">${LOGO}<span class="visually-hidden">Spielraum</span></span><div class="monthpicker"><button class="iconbtn" data-action="prev" aria-label="Vorheriger Monat" ${month==='2000-01'?'disabled':''}>${icon('left')}</button><button class="month-button" data-action="month" aria-label="Monat wählen, aktuell ${monthName(month)}">${monthName(month)}</button><button class="iconbtn" data-action="next" aria-label="Nächster Monat" ${month==='2100-12'?'disabled':''}>${icon('right')}</button></div><button class="iconbtn" data-action="settings" aria-label="Daten, Backup und Einstellungen">${icon('settings')}</button></header><main class="main view-${view}">${demoMode?'<div class="notice">'+icon('spark')+'<span><strong>Beispielplan</strong> · Deine eigenen Daten bleiben unverändert.</span><button class="textbtn" data-action="demo">Beenden</button></div>':''}${loadError||saveError?'<div class="notice error" role="alert"><span>'+esc(loadError||saveError)+'</span><button class="textbtn" data-action="settings">Daten & Backup</button></div>':''}${state.settings.migrated&&!state.settings.migrationSeen?'<div class="notice"><span><strong>Deine bisherigen Posten sind übernommen.</strong> Bei älteren Jahresposten bitte den Zahlungsmonat bestätigen.</span><button class="textbtn" data-action="migration-seen">Verstanden</button></div>':''}${view!=='plan'?`<h1 class="view-title">${titles[view]}</h1>`:''}${view==='plan'&&!demoMode&&!t.items.length?'<div class="notice"><span>Starte mit Deinem Einkommen oder sieh Dir einen Beispielplan an.</span><button class="textbtn" data-action="demo">Beispiel ansehen</button></div>':''}${annualNotice()}${view==='plan'?monthUI.render():view==='savings'?savingsUI.render():yearUI.render()}${!demoMode&&(state.items.length||state.pots.length||state.actualExpenses.length||state.goals.length)&&(!state.settings.lastBackup||Date.now()-Date.parse(state.settings.lastBackup)>14*86400000)?'<div class="notice backup">'+icon('save')+'<span>'+(state.settings.lastBackup?'Dein letztes Backup ist über zwei Wochen alt.':'Noch kein Backup gespeichert.')+'</span><button class="textbtn" data-action="backup">Sichern</button></div>':''}<p class="footer-note">${icon('lock')}Gespeichert nur auf diesem Gerät</p></main><nav class="tabbar" aria-label="Hauptnavigation">${tab('plan','wallet')}${tab('savings','jar')}<button class="fab" data-action="quick-add" aria-label="Ausgabe erfassen">${icon('plus')}</button>${tab('year','bars')}</nav>`;
 }
 function openDialog(title,body,handler=null){
   const d=$('#dialog');
@@ -325,7 +323,7 @@ function deletePost(id){
   }
 }
 function settingsDialog(){
-  openDialog('Daten & Backup',`<div class="settings-section"><h3>Dein Plan bleibt auf diesem Gerät</h3><p>Deine Posten werden lokal gespeichert. Ein anderer Browser oder ein neues Handy hat einen eigenen Stand. Die App sendet Deine eingegebenen Finanzdaten nicht an einen Server oder eine KI.</p></div><div class="settings-section"><h3>Backup & Wiederherstellung</h3><p>${state.settings.lastBackup?'Letztes Backup: '+new Date(state.settings.lastBackup).toLocaleDateString('de-DE')+'.':'Noch kein Backup exportiert.'} Sichere regelmäßig eine Datei. Beim Löschen von Website-Daten oder bei Geräteverlust können lokale Daten verloren gehen.</p><div class="inline">${btn('Backup speichern','backup','dark','download')}${btn('Wiederherstellen','import','outline',null)}</div>${loadError?'<button class="textbtn danger-zone" data-action="rescue">Vorhandene Rohdaten retten</button>':''}</div><div class="settings-section"><h3>Kategorien & Farben</h3><p>Eigene Kategorien, Farben und Stichwörter. Deine manuelle Auswahl merkt sich die App für gleich benannte neue Posten.</p><div class="inline">${btn('Kategorien bearbeiten','categories','outline','edit')}${btn('Zuordnungen prüfen','review-categories','outline','spark')}</div></div><div class="settings-section"><h3>Spielraum auf dem Startbildschirm</h3><p>Öffne diese Seite in Chrome und wähle im Menü „Zum Startbildschirm hinzufügen“ oder „App installieren“.</p><div class="inline">${btn('Als App nutzen','install','outline','plus')}${btn('App neu laden','reload-app','outline','repeat')}${btn('Speicherschutz','persist-storage','outline','lock')}</div></div><div class="settings-section"><h3>Ausprobieren & exportieren</h3><div class="inline">${btn(demoMode?'Beispiel beenden':'Beispielplan ansehen','demo','outline','spark')}${btn('Posten als CSV','csv','outline','download')}${btn('Für einen Chat','analysis-export','outline','download')}</div></div><div class="settings-section"><h3>So rechnet Spielraum</h3><p>Noch frei = Einnahmen − bereits Ausgegebenes − offene Rechnungen − übrige Budgets − Sparen. Käufe innerhalb eines Budgets ändern den freien Betrag nicht, Käufe ohne Budget oder über Plan senken ihn. Alle Posten zählen sofort, unabhängig von einem Abbuchungstag. Dreimonatige Posten zählen ab dem Startmonat alle drei Monate mit dem vollen Betrag. Neue Jahresposten zählen vollständig im gewählten Zahlungsmonat, dann alle zwölf Monate. Bei älteren Jahresposten bestätigst Du zuerst den Zahlungsmonat; bis dahin bleibt der bisherige Monatsanteil erhalten. Die Monatsvorschau führt Deine bestehenden Pläne fort.</p><p class="spaced">Änderst oder löschst Du einen monatlichen Posten, gilt das ab dem ausgewählten Monat. Frühere Monate bleiben erhalten.</p><p class="note">Spielraum 3.0 · Monat, Rücklagen & Ziele</p><button class="textbtn" data-action="update-backup">Sicherung vor diesem Update exportieren</button></div>`);
+  openDialog('Daten & Backup',`<div class="settings-section"><h3>Dein Plan bleibt auf diesem Gerät</h3><p>Deine Posten werden lokal gespeichert. Ein anderer Browser oder ein neues Handy hat einen eigenen Stand. Die App sendet Deine eingegebenen Finanzdaten nicht an einen Server oder eine KI.</p></div><div class="settings-section"><h3>Backup & Wiederherstellung</h3><p>${state.settings.lastBackup?'Letztes Backup: '+new Date(state.settings.lastBackup).toLocaleDateString('de-DE')+'.':'Noch kein Backup exportiert.'} Sichere regelmäßig eine Datei. Beim Löschen von Website-Daten oder bei Geräteverlust können lokale Daten verloren gehen.</p><div class="inline">${btn('Backup speichern','backup','dark','download')}${btn('Wiederherstellen','import','outline',null)}</div>${loadError?'<button class="textbtn danger-zone" data-action="rescue">Vorhandene Rohdaten retten</button>':''}</div><div class="settings-section"><h3>Kategorien & Farben</h3><p>Eigene Kategorien, Farben und Stichwörter. Deine manuelle Auswahl merkt sich die App für gleich benannte neue Posten.</p><div class="inline">${btn('Kategorien bearbeiten','categories','outline','edit')}${btn('Zuordnungen prüfen','review-categories','outline','spark')}</div></div><div class="settings-section"><h3>Spielraum auf dem Startbildschirm</h3><p>Öffne diese Seite in Chrome und wähle im Menü „Zum Startbildschirm hinzufügen“ oder „App installieren“.</p><div class="inline">${btn('Als App nutzen','install','outline','plus')}${btn('App neu laden','reload-app','outline','repeat')}${btn('Speicherschutz','persist-storage','outline','lock')}</div></div><div class="settings-section"><h3>Ausprobieren & exportieren</h3><div class="inline">${btn(demoMode?'Beispiel beenden':'Beispielplan ansehen','demo','outline','spark')}${btn('Posten als CSV','csv','outline','download')}${btn('Für einen Chat','analysis-export','outline','download')}</div></div><div class="settings-section"><h3>So rechnet Spielraum</h3><p>Noch frei = Einnahmen − bereits Ausgegebenes − offene Rechnungen − übrige Budgets − Sparen. Käufe innerhalb eines Budgets ändern den freien Betrag nicht, Käufe ohne Budget oder über Plan senken ihn. Alle Posten zählen sofort, unabhängig von einem Abbuchungstag. Dreimonatige Posten zählen ab dem Startmonat alle drei Monate mit dem vollen Betrag. Neue Jahresposten zählen vollständig im gewählten Zahlungsmonat, dann alle zwölf Monate. Bei älteren Jahresposten bestätigst Du zuerst den Zahlungsmonat; bis dahin bleibt der bisherige Monatsanteil erhalten. Der Bereich Jahr führt Deine bestehenden Pläne zwölf Monate fort.</p><p class="spaced">Änderst oder löschst Du einen monatlichen Posten, gilt das ab dem ausgewählten Monat. Frühere Monate bleiben erhalten.</p><p class="note">Spielraum 3.1 · Monat, Sparen & Jahr</p><button class="textbtn" data-action="update-backup">Sicherung vor diesem Update exportieren</button></div>`);
 }
 function categoriesDialog(){
   openDialog('Deine Kategorien',`<div class="stack"><div>${state.categories.map(c=>`<div class="category-row"><span class="dot" style="background:${themeColor(c.color)}"></span><span>${esc(c.name)}</span><button data-action="edit-category" data-id="${c.id}" aria-label="${esc(c.name)} bearbeiten">${icon('edit')}</button></div>`).join('')}</div>${btn('Kategorie hinzufügen','new-category','outline','plus')}</div>`);
@@ -368,7 +366,7 @@ function exportCSV(){
   toast('CSV-Download gestartet.');
 }
 function exportAnalysis(){
-  const data={format:'Spielraum Monatsplanung',version:2,waehrung:'EUR',erklaerung:'Geplante Beträge für vollständige Monate, unabhängig von Abbuchungstagen. Neue Jahresposten im Zahlungsmonat; unbestätigte Altposten weiterhin mit ihrem bisherigen Monatsanteil. Kein Kontostand. Ohne Postennamen oder Notizen.',monate:forecast(state,month,forecastMonths).map(p=>({monat:p.month,erfassteAusgaben:actualSummary(state,p.month).total/100,erfassteKategorien:actualSummary(state,p.month).categories.filter(c=>c.value).map(c=>({name:c.name,betrag:c.value/100})),einnahmen:p.income/100,ausgaben:p.expense/100,ruecklagen:p.saving/100,entnahmenAusRuecklagen:p.reserveWithdrawals/100,ruecklagenbestandGeplant:reserveSummary(state,p.month).balance/100,frei:p.remaining/100,kategorien:distribution(state,p.month,'expense').map(c=>({name:c.name,betrag:c.value/100}))}))};
+  const data={format:'Spielraum Monatsplanung',version:2,waehrung:'EUR',erklaerung:'Geplante Beträge für vollständige Monate, unabhängig von Abbuchungstagen. Neue Jahresposten im Zahlungsmonat; unbestätigte Altposten weiterhin mit ihrem bisherigen Monatsanteil. Kein Kontostand. Ohne Postennamen oder Notizen.',monate:forecast(state,month,12).map(p=>({monat:p.month,erfassteAusgaben:actualSummary(state,p.month).total/100,erfassteKategorien:actualSummary(state,p.month).categories.filter(c=>c.value).map(c=>({name:c.name,betrag:c.value/100})),einnahmen:p.income/100,ausgaben:p.expense/100,ruecklagen:p.saving/100,entnahmenAusRuecklagen:p.reserveWithdrawals/100,ruecklagenbestandGeplant:reserveSummary(state,p.month).balance/100,frei:p.remaining/100,kategorien:distribution(state,p.month,'expense').map(c=>({name:c.name,betrag:c.value/100}))}))};
   download(JSON.stringify(data,null,2),`spielraum-auswertung-${month}.json`);
   toast('Auswertung exportiert. Du kannst sie im Chat anhängen.');
 }
@@ -401,7 +399,7 @@ function commitUndo(next,message){
   return false;
 }
 const actions={
-  ...reserveUI.actions,...actualUI.actions,...goalUI.actions,...reconciliationUI.actions,...monthUI.actions,
+  ...reserveUI.actions,...actualUI.actions,...goalUI.actions,...reconciliationUI.actions,...monthUI.actions,...savingsUI.actions,...yearUI.actions,
   'change-detail':el=>{
     const c=planChanges(state,el.dataset.month),x=c?.changes.find(x=>x.id===el.dataset.id);
     if(!x)return;
@@ -415,14 +413,17 @@ const actions={
   'new-expense':()=>itemDialog('expense'),'new-income':()=>itemDialog('income'),'new-saving':()=>itemDialog('saving'),
   'edit-item':el=>{
     const i=state.items.find(i=>i.id===el.dataset.id);
-    if(['reserves','goals'].includes(view)&&i?.start>month){
+    if(view!=='plan'&&i?.start>month){
       month=i.start;
       render();
     }
     itemDialog('expense',el.dataset.id);
   },'delete-item':el=>{
+    if($('#dialog').open){
+      $('#dialog').close();
+      editContext=null;
+    }
     deletePost(el.dataset.id);
-    if(view==='reserves')$('#dialog').close();
   },
   close:()=>{
     $('#dialog').close();
@@ -557,16 +558,10 @@ const actions={
 
 };
 document.addEventListener('click',async event=>{
-  const forecastEl=event.target.closest('[data-forecast-month]');
-  if(forecastEl){
-    const m=forecastEl.dataset.forecastMonth;
-    toast(`${monthName(m)}: ${euro(totals(state,m).remaining)} frei`);
-    return;
-  }
   const el=event.target.closest('button')||event.target.closest('[data-action]');
   if(!el)return;
   if(el.dataset.view){
-    if(!['plan','reserves','goals'].includes(el.dataset.view))return;
+    if(!VIEWS[el.dataset.view])return;
     view=el.dataset.view;
     render();
     window.scrollTo({top:0,behavior:'instant'});
@@ -602,7 +597,7 @@ document.addEventListener('click',async event=>{
   }
 });
 document.addEventListener('keydown',e=>{
-  if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-forecast-month], [data-action][role=button]')){
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-action][role=button]')){
     e.preventDefault();
     e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));
   }
@@ -617,6 +612,10 @@ document.addEventListener('submit',event=>{
   }
 });
 document.addEventListener('input',event=>{
+  if(event.target.matches?.('[data-wish-range]')){
+    savingsUI.slide(event.target);
+    return;
+  }
   if(event.target.closest('#quick-form')){
     monthUI.quickPreview(event.target.closest('#quick-form'));
     return;
@@ -650,10 +649,6 @@ document.addEventListener('change',async event=>{
   if(event.target.id==='actual-category')$('#actual-new-category').hidden=event.target.value!=='__new';
   if(event.target.id==='editor-category')showInlineCategory();
   if(event.target.closest('#item-form'))previewForm();
-  if(event.target.id==='forecast-range'){
-    forecastMonths=Number(event.target.value);
-    render();
-  }
 });
 $('#import-file').addEventListener('change',async event=>{
   const file=event.target.files?.[0];
@@ -726,22 +721,3 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js',{upda
 }).catch(e=>{
   swError=e.message||'Dienst nicht verfügbar';
 });
-const context=document.modelContext;
-if(context?.registerTool){
-  const lifecycle=new AbortController();
-  try{
-    Promise.resolve(context.registerTool({
-      name:'show_budget_chart',title:'Budgetdiagramm anzeigen',description:'Zeigt eine Monatsplanung als interaktives Kreis- oder Ringdiagramm. Verändert keine gespeicherten Finanzdaten.',inputSchema:{type:'object',properties:{month:{type:'string'},shape:{type:'string',enum:['ring','pie']},mode:{type:'string',enum:['all','expense','saving']}},required:['month','shape','mode'],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute(input){
-        if(!input||!validMonth(input.month)||!['ring','pie'].includes(input.shape)||!['all','expense','saving'].includes(input.mode))throw Error('Ungültiges Diagramm.');
-        month=input.month;
-        chartShape=input.shape;
-        chartMode=input.mode;
-        view='plan';
-        selectedSlice=null;
-        render();
-        return {shown:true,month,shape:chartShape,mode:chartMode};
-      }
-    },{signal:lifecycle.signal})).catch(()=>{});
-    window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});
-  }catch{}
-}

@@ -1,6 +1,6 @@
-/* Spielraum 3.0 – ein Stylesheet für die ganze App.
+/* Spielraum 3.1 – ein Stylesheet für die ganze App.
    Aufbau: 1 Tokens · 2 Grundlagen · 3 Rahmen (Kopf, Inhalt, Navigation) · 4 Bausteine
-   (Knöpfe, Hinweise, Karten, Formulare, Dialoge) · 5 Monat · 6 Rücklagen · 7 Ziele · 8 Sonstiges.
+   (Knöpfe, Hinweise, Karten, Formulare, Dialoge) · 5 Monat · 6 Sparen · 7 Jahr · 8 Sonstiges.
    Regel: Farben nur über Tokens, keine Überschreibungen später im File. */
 
 /* 1 · Tokens */
@@ -118,6 +118,9 @@ label>span{font-size:14px;font-weight:550;color:var(--muted)}
 input,select,textarea{width:100%;min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:10px 12px;font-size:16px}
 textarea{min-height:76px;resize:vertical}
 input[type=color]{padding:4px;min-height:44px}
+input[type=range]{min-height:40px;padding:0;border:0;background:none;accent-color:var(--primary)}
+input[type=range]:focus{outline:none}
+input[type=range]:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 input[type=checkbox],input[type=radio]{width:20px;height:20px;min-height:0;accent-color:var(--primary)}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--focus);outline-offset:0;border-color:transparent}
 .amount-field{position:relative}
@@ -284,75 +287,82 @@ dialog.modal[open]{position:fixed;inset:auto 0 0 0}
 .choices-more>summary{font-size:14px;font-weight:600;color:var(--muted);padding:8px 0}
 .choices-more .choices{margin:0}
 
-/* 6 · Rücklagen (bestehende Ansicht, neu eingekleidet) */
-.reserve-intro,.goals-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 4px 14px;color:var(--muted);font-size:14.5px}
-.reserve-intro .btn,.goals-toolbar .btn{flex:none;min-height:42px;padding:8px 14px}
-.reserve-overview{display:grid;gap:12px}
-.reserve-hero{padding:4px 4px 8px}
-.reserve-grand-total{display:block;font-size:42px;font-weight:760;letter-spacing:-.035em;font-variant-numeric:tabular-nums;margin-top:2px}
-.reserve-bridge,.pot-equation,.goal-funding,.goal-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
-.goal-funding{grid-template-columns:repeat(2,minmax(0,1fr))}
-.reserve-bridge>div,.pot-equation>span,.goal-funding>div,.goal-overview>div{display:grid;gap:2px;background:var(--surface-2);border-radius:12px;padding:10px;font-size:12.5px;color:var(--muted);min-width:0}
-.reserve-bridge b,.pot-equation b,.goal-funding b,.goal-overview strong{display:block;color:var(--ink);font-size:15px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.reserve-composition{padding:16px}
-.reserve-composition h2{font-size:16px;margin-bottom:10px}
-.composition-strip{display:flex;gap:2px;height:10px;border-radius:6px;overflow:hidden;margin-bottom:6px}
-.composition-row{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;border-top:1px solid var(--line);text-align:left;font-size:15px}
-.composition-row:first-of-type{border-top:0}
-.composition-row span{flex:1}
-.composition-row b{font-variant-numeric:tabular-nums}
-.composition-row .icon{color:var(--faint);width:18px;height:18px}
-.reserve-grid,.goals-grid{display:grid;gap:12px;margin-top:12px}
-.reserve-pot,.goal-card{padding:16px}
-.goal-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow)}
-.reserve-pot .section-head{margin-bottom:6px;align-items:center}
-.reserve-pot .section-head h2{display:flex;align-items:center;gap:8px}
-.pot-balance{display:block;font-size:30px;font-weight:740;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:2px}
-.pot-progress,.goal-progress{height:7px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin:12px 0 6px}
-.pot-progress span,.goal-progress span{display:block;height:100%;border-radius:4px;background:var(--goal-color,var(--pot-color,var(--primary)))}
-.pot-warning{color:var(--negative);font-size:14px;margin-top:8px}
-.pot-flow{margin-top:14px}
-.pot-flow h3{font-size:12.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
-.cashflow-row,.payment-entry{display:flex;align-items:center;gap:6px}
+/* 6 · Sparen: Töpfe und Wünsche */
+.group-note{margin:8px 4px 0;font-size:13.5px}
+.group .starter-chips{justify-content:flex-start;margin:6px 0 2px}
+.pots,.wishes{display:grid;gap:10px}
+.pot,.wish{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:4px 14px 12px}
+.pot-head{display:flex;align-items:center;width:100%;min-height:58px;text-align:left}
+.pot-head .dot-mark{margin:0 12px 0 2px}
+.pot-name,.wish-title{flex:1;min-width:0;display:grid;gap:1px;font-size:16px;font-weight:600;line-height:1.3;overflow-wrap:anywhere;text-align:left}
+.pot-name small,.wish-title small{font-size:13px;font-weight:500;color:var(--muted)}
+.pot-balance{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;margin-left:10px}
+.pot-line,.pot-goal{font-size:13.5px;color:var(--muted)}
+.pot-goal b{color:var(--ink);font-weight:600}
+.meter.goal{height:6px;margin-top:8px}
+.pot-status{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:8px}
+.pot-status .textbtn{min-height:32px;font-size:14px}
+.pot-buffer{font-size:13px;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;min-height:26px;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:650;background:var(--surface-2);color:var(--muted)}
+.chip.ok{background:var(--primary-soft);color:var(--positive)}
+.chip.warn{background:var(--accent-soft);color:var(--ink)}
+.pot .add-line{min-height:40px;margin-top:2px;padding-left:0;font-size:14px}
+.wish-head{display:flex;align-items:center;gap:12px;min-height:58px}
+.btn.small{min-height:38px;padding:6px 12px;font-size:14px;border-radius:12px;flex:none}
+.wish-slider{display:block;margin-top:2px}
+.wish-out{font-size:14px;color:var(--muted);line-height:1.5;font-variant-numeric:tabular-nums}
+.wish-out b{color:var(--ink);font-size:17px}
+.figures.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.figures.four b{font-size:15px}
+@media (max-width:420px){.figures.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sheet-links{display:flex;flex-wrap:wrap;gap:0 18px;margin-top:8px}
+.sheet-more{margin-top:14px}
+.sheet-more>summary{font-size:14.5px;font-weight:600;color:var(--muted);padding:8px 0}
+.textbtn.small{min-height:32px;font-size:14px}
+
+/* 7 · Jahr: zwölf Monate, Abos & Verträge, Rückblick */
+.ycard{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 10px 14px;margin-top:16px}
+.ybars{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px}
+.ybar{display:grid;justify-items:center;gap:6px;padding:0 0 4px;border-radius:8px;min-width:0}
+.ybar-track{position:relative;display:block;width:100%;height:132px}
+.ybar-track::before{content:"";position:absolute;left:-1px;right:-1px;bottom:var(--zero);height:1px;background:var(--line)}
+.ybar-track i{position:absolute;left:16%;right:16%;bottom:var(--zero);height:max(3px,var(--h));border-radius:4px 4px 1px 1px;background:var(--seg-saving);opacity:.5}
+.ybar.on .ybar-track i{background:var(--primary);opacity:1}
+.ybar.is-neg .ybar-track i{bottom:auto;top:calc(100% - var(--zero));border-radius:1px 1px 4px 4px;background:var(--negative);opacity:.55}
+.ybar.is-neg.on .ybar-track i{opacity:1}
+.ybar-peak{position:absolute;left:50%;bottom:calc(var(--zero) + var(--h) + 5px);width:7px;height:7px;border-radius:50%;background:var(--accent);transform:translateX(-50%)}
+.ybar.is-neg .ybar-peak{bottom:calc(var(--zero) + 5px)}
+.ybar small{font-size:11px;color:var(--muted);font-weight:550;white-space:nowrap}
+.ybar.on small{color:var(--ink);font-weight:750}
+.ylegend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--muted);margin:8px 4px 0}
+.ylegend span{display:inline-flex;align-items:center;gap:6px}
+.ylegend i{display:block}
+.ylegend-bar{width:8px;height:11px;border-radius:2px;background:var(--primary)}
+.ylegend-peak{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.ydetail{border-top:1px solid var(--line);margin-top:14px;padding:14px 4px 0}
+.ydetail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+.ydetail-month{font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.ydetail-value{font-size:24px;font-weight:740;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ydetail-value span{font-size:14px;font-weight:500;color:var(--muted);letter-spacing:0}
+.ydetail-diff{font-size:13.5px;color:var(--muted);margin-top:2px}
+.ydetail-head .textbtn .icon{width:16px;height:16px}
+.ydetail .rows.compact{padding:0 12px}
+.ydetail .rows.compact .row{min-height:52px;padding:4px 0}
+.ydetail .rows.compact .row-title{font-size:15px}
+.review-row .meter{margin-top:8px}
+.group-head .textbtn{min-height:32px;font-size:14px;text-transform:none;letter-spacing:0}
+
+/* Ältere Bausteine, die noch von Dialogen genutzt werden */
 .cashflow-open{flex:1;display:flex;align-items:center;gap:12px;min-height:52px;text-align:left;border-top:1px solid var(--line)}
 .cashflow-open>span:nth-child(2){flex:1;min-width:0}
 .cashflow-open strong{display:block;font-size:15px}
 .cashflow-open small{display:block;color:var(--muted);font-size:13px}
 .cashflow-open b{font-variant-numeric:tabular-nums}
-.flow-direction{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--surface-2);color:var(--muted)}
-.flow-direction .icon{width:16px;height:16px}
-.flow-direction.in{background:var(--primary-soft);color:var(--positive)}
-.pot-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
-.pot-bottom{display:flex;justify-content:space-between;gap:10px;margin-top:6px}
-.reserve-trend{margin-top:12px;padding:16px}
-.reserve-trend .helper{margin-top:10px;font-size:13px}
-.reserve-help,.goals-done{margin-top:18px;color:var(--muted);font-size:14px}
-.reserve-help>summary,.goals-done>summary{padding:10px 4px;font-weight:600}
-.reserve-help p{margin:6px 4px 0;line-height:1.5}
-.reserve-empty{padding:22px 18px;text-align:center}
-.reserve-empty h2{font-size:20px;margin:10px 0 6px}
-.reserve-empty p{color:var(--muted);font-size:14.5px}
-.payment-ledger{display:none}
-
-/* 7 · Ziele */
-.goal-overview{margin:0 0 6px}
-.goal-context,.goal-footnote{color:var(--muted);font-size:13px;margin:8px 4px 0;line-height:1.45}
-.goal-footnote{margin-top:18px}
-.goal-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.goal-card-head h2{font-size:19px;font-weight:700;letter-spacing:-.01em;margin-top:2px}
-.goal-price{margin-top:8px}
-.goal-price strong{display:block;font-size:28px;font-weight:740;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-.goal-price span{color:var(--muted);font-size:14px}
-.goal-pot-link{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;margin-top:10px;font-size:14.5px;font-weight:600;text-align:left}
-.goal-pot-link span{margin-left:auto;font-weight:500;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
-.goal-deadline{margin-top:10px;background:var(--surface-2);border-radius:12px;padding:12px;font-size:14px}
-.goal-deadline p{color:var(--muted);margin-top:2px;font-size:13.5px}
-.goal-unlinked,.goal-note{color:var(--muted);font-size:14px;margin-top:10px}
-.goal-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
-.goal-actions .btn{flex:1}
-.goal-empty{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px 18px;text-align:center}
-.goal-empty h2{font-size:22px;margin:6px 0}
-.goal-empty p{color:var(--muted);font-size:14.5px;margin-bottom:14px}
+.composition-row{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;border-top:1px solid var(--line);text-align:left;font-size:15px}
+.composition-row:first-of-type{border-top:0}
+.composition-row span{flex:1}
+.composition-row b{font-variant-numeric:tabular-nums}
+.composition-row .icon{color:var(--faint);width:18px;height:18px}
 
 /* 8 · Sonstiges: ältere Dialoge, die weiter genutzt werden */
 .filter-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:999px;padding:4px 6px 4px 12px;font-size:14px}
