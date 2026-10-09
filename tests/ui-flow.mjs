@@ -136,20 +136,22 @@ console.log('PASS: one month area, direct new-purchase linkage across revisions,
 // 3.1: Sparen – Wunsch mit Sparrechner, Sparplan mit einem Tipp, Ziel direkt am Topf; Jahr – zwölf Monate, Abos & Verträge, Rückblick.
 {
 const {shiftMonth:shift}=await import('../dist/planner.js');
-const wish=state().goals.find(g=>g.title==='Kaffeemühle');assert.equal(wish.potId,'');assert.match(page(),new RegExp('data-wish-range="'+wish.id+'"'));assert.match(page(),/Sparplan starten/);
-const out={innerHTML:''},startBtn={dataset:{months:'12'}},card={querySelector:q=>q==='.wish-out'?out:startBtn};
-listeners.input({target:{matches:q=>q==='[data-wish-range]',dataset:{wishRange:wish.id},value:'4',closest:()=>card}});assert.match(out.innerHTML,/65,00\s€/);assert.equal(startBtn.dataset.months,'4');
+await click({action:'goal-new'});submit({title:'Lampe',price:'90',deadline:'',potId:'',note:''});
+const wish=state().goals.find(g=>g.title==='Kaffeemühle'),lamp=state().goals.find(g=>g.title==='Lampe');assert.equal(wish.potId,'');assert.match(page(),/data-wishplan-range/);assert.match(page(),/Fahrplan übernehmen/);assert.ok(page().indexOf('Kaffeemühle')<page().indexOf('Lampe'));
+listeners.input({target:{matches:q=>q==='[data-wishplan-range]',value:'6500'}});assert.equal(get('#wp-value').textContent.replace(/\s/g,' '),'65,00 €');assert.match(get('#wp-body').innerHTML,/65,00\s€<\/b> im Monat/);
+await listeners.change({target:{matches:q=>q==='[data-wishplan-range]',value:'6500'}});assert.equal(state().settings.wishPlan.monthly,6500);
+await click({action:'wish-down',id:wish.id});assert.deepEqual(state().settings.wishPlan.order,[lamp.id,wish.id]);assert.ok(page().indexOf('Lampe')<page().indexOf('Kaffeemühle'));
 const nextMonth=shift(currentMonth(),1),nowPlan=totals(state(),currentMonth()),nextPlan=totals(state(),nextMonth),potCount=state().pots.length;
-await click({action:'wish-start',id:wish.id,months:'4'});const started=state().goals.find(g=>g.id===wish.id),plan=state().items.find(i=>i.potId===started.potId);
-assert.equal(state().pots.length,potCount+1);assert.equal(state().pots.at(-1).name,'Kaffeemühle');assert.equal(started.deadline,shift(currentMonth(),4));assert.equal(plan.amount,6500);assert.equal(plan.type,'saving');assert.equal(plan.start,nextMonth);assert.equal(plan.end,started.deadline);
-assert.deepEqual(totals(state(),currentMonth()),nowPlan);assert.equal(totals(state(),nextMonth).saving,nextPlan.saving+6500);assert.match(get('#toast').innerHTML,/Rückgängig/);assert.doesNotMatch(page(),new RegExp('data-wish-range="'+wish.id+'"'));
-await click({action:'wish-start',id:wish.id,months:'4'});assert.equal(state().pots.length,potCount+1);
-await click({action:'undo'});assert.equal(state().pots.length,potCount);assert.equal(state().goals.find(g=>g.id===wish.id).potId,'');assert.equal(totals(state(),nextMonth).saving,nextPlan.saving);
+await click({action:'wishplan-apply',monthly:'6500'});const started=state().goals.find(g=>g.id===wish.id),plan=state().items.find(i=>i.potId===started.potId),lampPlan=state().items.find(i=>i.potId===state().goals.find(g=>g.id===lamp.id).potId);
+assert.equal(state().pots.length,potCount+2);assert.equal(lampPlan.amount,4500);assert.equal(lampPlan.start,nextMonth);assert.equal(lampPlan.end,shift(currentMonth(),2));assert.equal(plan.amount,6500);assert.equal(plan.start,shift(currentMonth(),3));assert.equal(started.deadline,shift(currentMonth(),6));
+assert.deepEqual(totals(state(),currentMonth()),nowPlan);assert.equal(totals(state(),nextMonth).saving,nextPlan.saving+4500);assert.match(get('#toast').innerHTML,/Rückgängig/);assert.doesNotMatch(page(),/data-wishplan-range/);
+await click({action:'wishplan-apply',monthly:'6500'});assert.equal(state().pots.length,potCount+2);
+await click({action:'undo'});assert.equal(state().pots.length,potCount);assert.equal(state().goals.find(g=>g.id===wish.id).potId,'');assert.equal(state().goals.find(g=>g.id===lamp.id).potId,'');assert.equal(totals(state(),nextMonth).saving,nextPlan.saving);
 await click({action:'pot-new'});submit({name:'Notgroschen',balance:'500',month:currentMonth()});const freePot=state().pots.find(p=>!state().goals.some(g=>g.status==='active'&&g.potId===p.id));await click({action:'goal-new',pot:freePot.id});assert.equal(activeForm.data.potId,freePot.id);await click({action:'close'});
 await click({action:'savings-pot',id:freePot.id});assert.match(get('#dialog').innerHTML,/Eingetragene Bestände/);assert.match(get('#dialog').innerHTML,/data-action="pot-deposit"/);await click({action:'close'});
 await click({view:'year'});assert.match(page(),/Frei in 12 Monaten/);assert.equal((page().match(/data-action="year-pick"/g)||[]).length,12);assert.match(page(),/Abos & Verträge/);assert.match(page(),/im Jahr/);assert.ok(!page().includes('NaN'));
 const pickMonth=shift(currentMonth(),3);await click({action:'year-pick',month:pickMonth});assert.match(page(),new RegExp('data-month="'+pickMonth+'" aria-pressed="true"'));
 await click({action:'next'});assert.match(page(),/Rückblick/);assert.match(page(),/Ausgegeben/);await click({action:'year-open',month:currentMonth()});assert.match(page(),/view-plan/);assert.match(page(),/Noch frei im/);
 }
-console.log('PASS: savings calculator slider, one-tap savings plan with undo and duplicate protection, goal preselects pot, pot sheet; year bars, month pick, contracts and previous-month review.');
+console.log('PASS: wish plan slider (live and saved), reordering, one-tap adoption of all wishes with undo and duplicate protection, goal preselects pot, pot sheet; year bars, month pick, contracts and previous-month review.');
 process.exit(0);

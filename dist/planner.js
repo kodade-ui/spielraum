@@ -101,6 +101,11 @@ export function validate(s) {
   if(s.settings.analysis){
     if(!obj(s.settings.analysis)||!amount(s.settings.analysis.buffer)||!amount(s.settings.analysis.savingTarget))fail();
   }
+  // Wunsch-Fahrplan (ab 3.2): Monatsbetrag und Reihenfolge der Wünsche. Verweise auf gelöschte Ziele sind erlaubt und werden ignoriert.
+  if(s.settings.wishPlan!==undefined){
+    const w=s.settings.wishPlan;
+    if(!obj(w)||!amount(w.monthly)||w.monthly>100000000||!Array.isArray(w.order)||w.order.length>1000||w.order.some(x=>!id(x)))fail();
+  }
   if(s.settings.assignments){
     if(!obj(s.settings.assignments)||Object.keys(s.settings.assignments).length>100000)fail();
     for(const [k,v]of Object.entries(s.settings.assignments))if(k.length>180||!cats.has(v))fail();

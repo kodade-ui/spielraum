@@ -4,14 +4,20 @@
 
 Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Prioritäten: (1) größere Anschaffungen durchspielen, (2) weniger manuelle Arbeit, (3) Wünsche zeitlich miteinander vereinbaren. Keine zweite Bankbuchhaltung, keine erneute Analyse-Hauptnavigation. Datenerhalt hat Vorrang vor einem technisch bequemen Neubau.
 
-## Tatsächlich vorhanden (3.1)
+## Tatsächlich vorhanden (3.2)
 
 - Drei Bereiche: Monat, Sparen, Jahr; Plus-Taste für die Schnellerfassung.
 - Sofortige Monatsprojektion, erweiterbare Kategorien, monatliche/vierteljährliche/jährliche/einmalige Posten.
 - Monat: eine Hauptzahl „Noch frei“, Rechnungen abhaken, Budgets mit Rest, Käufe ohne Budget mit Zuordnung, Detailblatt.
-- Sparen: Töpfe mit Zielstatus, Wünsche mit Terminschieber und „Sparplan starten“.
+- Sparen: Töpfe mit Zielstatus und ein Wunsch-Fahrplan (Reihenfolge, Monatsbetrag, Zeitleiste, Übernahme mit einem Tipp).
 - Jahr: zwölf Monate frei mit Sonderzahlungen, Abos & Verträge mit Jahreskosten, Rückblick auf den Vormonat.
 - Lokale Speicherung, Datei-Backup, Wiederherstellung, PWA-Installation und Offline-Shell. Kein Bankkonto verbunden.
+
+## Erledigt in 3.2 (9. Oktober 2026)
+
+- Wunsch-Fahrplan ersetzt den Schieber je Wunsch.
+- Diagramme überarbeitet: geprüfte Farben im Aufteilungsbalken, Planbalken mit sichtbarer Überschreitung, Jahresbalken mit Linie „üblich“.
+- Details: `docs/AENDERUNGEN-3.2.md`.
 
 ## Erledigt in 3.1 (9. Oktober 2026) · Paket 2 und 3
 
@@ -30,7 +36,7 @@ Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Priorit�
 
 ## Nächste Schritte
 
-Alle drei Pakete aus dem Rundum-Check sind umgesetzt. Weitere Arbeit erst nach Rückmeldung des Nutzers vom echten Handy, insbesondere zu Schieber, Jahresbalken und Lesbarkeit.
+Alle drei Pakete aus dem Rundum-Check und der Wunsch-Fahrplan sind umgesetzt. Vorgeschlagen, aber nicht beauftragt: Kontostand-Abgleich (vom Nutzer vorerst zurückgestellt, Nutzen erschloss sich nicht), Geldfluss-Diagramm, Favoriten in der Schnellerfassung, Backup per Teilen, automatisches Abhaken am Zahlungstag, Suche über Käufe. Hosting-Update-Weg (Worker umbenennen) bleibt umständlich; Pages oder GitHub prüfen.
 
 ## Erledigt in 2.13 (8. Oktober 2026)
 

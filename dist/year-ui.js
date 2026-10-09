@@ -3,7 +3,7 @@
 import {euro,amountText,monthName,shiftMonth,validMonth,forecast,legacyAnnual} from './planner.js';
 import {reconcileMonth} from './reconciliation.js';
 import {paceFor} from './intelligence.js';
-import {themeColor} from './theme.js';
+import {planMeter} from './theme.js';
 
 const MONTHS=12;
 // Auch Posten in variablen Kategorien zählen als Vertrag, wenn der Name eindeutig danach klingt (z. B. „Handyvertrag“ unter Sonstiges).
@@ -21,9 +21,11 @@ export function createYearUI(ctx){
   const special=p=>p.items.filter(i=>i.type==='expense'&&!legacyAnnual(i)&&(i.frequency==='quarter'||i.frequency==='year'||(i.frequency==='once'&&!i.groupId))).sort((a,b)=>b.monthlyAmount-a.monthlyAmount);
   const median=vals=>{const v=[...vals].sort((a,b)=>a-b),h=v.length>>1;return v.length%2?v[h]:Math.round((v[h-1]+v[h])/2)};
 
-  function chart(points,sel){
-    const vals=points.map(p=>p.remaining),max=Math.max(0,...vals),min=Math.min(0,...vals),range=max-min||1,zero=-min/range*100;
-    return `<div class="ybars" style="--zero:${zero.toFixed(2)}%" role="group" aria-label="Frei pro Monat">${points.map(p=>{
+  // Eine Reihe, eine Farbe: der gewählte Monat kräftig, die übrigen in der hellen Stufe derselben Farbe.
+  // Die Linie „üblich“ (Median) macht Abweichungen sichtbar, ohne die Balken abzuschneiden (Achse beginnt bei 0 €).
+  function chart(points,sel,typical){
+    const vals=points.map(p=>p.remaining),max=Math.max(0,...vals),min=Math.min(0,...vals),range=max-min||1,zero=-min/range*100,ref=Math.max(0,typical)/range*100;
+    return `<div class="ybars" style="--zero:${zero.toFixed(2)}%;--ref:${ref.toFixed(2)}%" role="group" aria-label="Frei pro Monat">${points.map(p=>{
       const sp=special(p).length,h=Math.abs(p.remaining)/range*100;
       return `<button class="ybar${p.remaining<0?' is-neg':''}${p.month===sel?' on':''}" style="--h:${h.toFixed(2)}%" data-action="year-pick" data-month="${p.month}" aria-pressed="${p.month===sel}" aria-label="${esc(monthName(p.month))}: ${euro(p.remaining)} frei${sp?', '+sp+(sp>1?' Sonderzahlungen':' Sonderzahlung'):''}"><span class="ybar-track"><i></i>${sp?'<b class="ybar-peak"></b>':''}</span><small>${esc(mon(p.month))}</small></button>`;
     }).join('')}</div>`;
@@ -60,7 +62,7 @@ export function createYearUI(ctx){
     if(!r.expenses.length)return `<section class="group">${head}<p class="helper group-note">Für ${esc(monthName(prev))} sind keine Käufe erfasst. Geplant waren ${euro(r.planTotal)} Ausgaben.</p></section>`;
     const diff=r.actualTotal-r.planTotal,open=r.links.filter(i=>i.budgetKind==='fixed'&&i.open>0&&!i.paid);
     const cats=[...r.categories].sort((a,b)=>(b.spent-b.planned)-(a.spent-a.planned));
-    return `<section class="group">${head}<div class="figures"><div><span>Geplant</span><b>${euro(r.planTotal)}</b></div><div><span>Ausgegeben</span><b>${euro(r.actualTotal)}</b></div><div><span>${diff>0?'Über Plan':'Unter Plan'}</span><b class="${diff>0?'is-negative':'is-positive'}">${euro(Math.abs(diff))}</b></div></div><ul class="rows">${cats.map(c=>{const over=c.spent>c.planned,pct=c.planned?Math.min(100,c.spent/c.planned*100):100;return `<li class="row review-row"><div class="row-main"><span class="row-title">${esc(c.name)}</span><span class="meter${over?' is-over':''}" style="--c:${themeColor(c.color)}"><span style="width:${pct.toFixed(1)}%"></span></span></div><span class="row-amount">${euro(c.spent)}<small>${c.planned?'von '+euro(c.planned):'ungeplant'}</small></span></li>`}).join('')}</ul>${open.length?`<p class="helper group-note">${open.length===1?'Eine Rechnung über':open.length+' Rechnungen über zusammen'} ${euro(open.reduce((n,i)=>n+i.open,0))} ${open.length===1?'ist':'sind'} nicht abgehakt (${esc(open.slice(0,3).map(i=>i.title).join(', '))}${open.length>3?' …':''}). Sie fehlen bei „Ausgegeben“.</p>`:''}</section>`;
+    return `<section class="group">${head}<div class="figures"><div><span>Geplant</span><b>${euro(r.planTotal)}</b></div><div><span>Ausgegeben</span><b>${euro(r.actualTotal)}</b></div><div><span>${diff>0?'Über Plan':'Unter Plan'}</span><b class="${diff>0?'is-negative':'is-positive'}">${euro(Math.abs(diff))}</b></div></div><ul class="rows">${cats.map(c=>{return `<li class="row review-row"><div class="row-main"><span class="row-title">${esc(c.name)}</span>${planMeter(c.spent,c.planned)}</div><span class="row-amount">${euro(c.spent)}<small>${c.planned?'von '+euro(c.planned):'ungeplant'}</small></span></li>`}).join('')}</ul>${open.length?`<p class="helper group-note">${open.length===1?'Eine Rechnung über':open.length+' Rechnungen über zusammen'} ${euro(open.reduce((n,i)=>n+i.open,0))} ${open.length===1?'ist':'sind'} nicht abgehakt (${esc(open.slice(0,3).map(i=>i.title).join(', '))}${open.length>3?' …':''}). Sie fehlen bei „Ausgegeben“.</p>`:''}</section>`;
   }
 
   function render(){
@@ -71,7 +73,7 @@ export function createYearUI(ctx){
     const sum=points.reduce((n,p)=>n+p.remaining,0),low=points.reduce((a,p)=>p.remaining<a.remaining?p:a,points[0]),typical=median(points.map(p=>p.remaining)),sel=points.find(p=>p.month===pick);
     const peaks=points.filter(p=>special(p).length).length;
     return `<section class="hero"><p class="hero-label">Frei in 12 Monaten · ${esc(short(points[0].month))}–${esc(short(points.at(-1).month))}</p><p class="hero-value ${sum<0?'is-negative':''}">${money2(sum)}</p><p class="hero-sub">Knappster Monat: ${esc(monthName(low.month))} mit <b class="${low.remaining<0?'is-negative':''}">${euro(low.remaining)}</b></p></section>
-<section class="ycard">${chart(points,pick)}<p class="ylegend"><span><i class="ylegend-bar"></i>Frei im Monat</span>${peaks?'<span><i class="ylegend-peak"></i>Sonderzahlung</span>':''}</p>${detail(sel,typical)}</section>
+<section class="ycard">${chart(points,pick,typical)}<p class="ylegend"><span><i class="ylegend-bar"></i>Frei im Monat</span>${typical>0?`<span><i class="ylegend-ref"></i>Üblich: ${euro(typical)}</span>`:''}${peaks?'<span><i class="ylegend-peak"></i>Sonderzahlung</span>':''}</p>${detail(sel,typical)}</section>
 ${contractsHTML()}
 ${review()}
 <p class="helper group-note">Planwerte aus Deinem Monatsplan, kein Kontostand. Die Summe oben addiert, was in den zwölf Monaten jeweils frei bleibt.</p>`;

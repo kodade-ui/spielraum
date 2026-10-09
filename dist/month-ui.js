@@ -5,7 +5,7 @@ import {euro,amountText,monthName,currentMonth,totals,projected,money,validDate,
 import {reconcileMonth,recordPlannedExpense,saveEntryClassification} from './reconciliation.js';
 import {saveActual} from './actuals.js';
 import {planChanges} from './budget-insights.js';
-import {themeColor} from './theme.js';
+import {themeColor,planMeter} from './theme.js';
 
 export function createMonthUI(ctx){
   const {esc,icon}=ctx;
@@ -59,9 +59,9 @@ export function createMonthUI(ctx){
   }
 
   function budgetRow(i){
-    const pct=i.monthlyAmount?Math.min(100,i.paid/i.monthlyAmount*100):100,over=i.over,color=themeColor(cat(i.category)?.color||'#5f8f80');
+    const over=i.over;
     const sub=[i.paid?euro(i.paid)+' ausgegeben':'',rhythm(i)].filter(Boolean).join(' · ');
-    return `<li class="row ${!i.open&&!over?'is-done':''}"><button class="tick ${!i.open?'on':''}" data-action="${i.open?'plan-pay-full':'month-item'}" data-id="${i.id}" aria-label="${esc(i.title)}: ${i.open?'Rest von '+euro(i.open)+' als ausgegeben abhaken':'Details anzeigen'}" ${closed(M())&&i.open?'disabled':''}>${!i.open?icon('check'):''}</button><button class="row-main" data-action="month-item" data-id="${i.id}"><span class="row-title">${esc(i.title)}</span>${sub?`<span class="row-sub">${esc(sub)}</span>`:''}<span class="meter ${over?'is-over':''}" style="--c:${color}"><span style="width:${pct.toFixed(1)}%"></span></span></button><span class="row-amount ${over?'is-negative':''}">${over?'−'+euro(over):euro(i.open)}<small>${over?'über Plan':'von '+euro(i.monthlyAmount)}</small></span></li>`;
+    return `<li class="row ${!i.open&&!over?'is-done':''}"><button class="tick ${!i.open?'on':''}" data-action="${i.open?'plan-pay-full':'month-item'}" data-id="${i.id}" aria-label="${esc(i.title)}: ${i.open?'Rest von '+euro(i.open)+' als ausgegeben abhaken':'Details anzeigen'}" ${closed(M())&&i.open?'disabled':''}>${!i.open?icon('check'):''}</button><button class="row-main" data-action="month-item" data-id="${i.id}"><span class="row-title">${esc(i.title)}</span>${sub?`<span class="row-sub">${esc(sub)}</span>`:''}${planMeter(i.paid,i.monthlyAmount)}</button><span class="row-amount ${over?'is-negative':''}">${over?'−'+euro(over):euro(i.open)}<small>${over?'über Plan':'von '+euro(i.monthlyAmount)}</small></span></li>`;
   }
 
   function planRow(i){
@@ -110,9 +110,9 @@ ${all.length?`<details class="journal"><summary>Alle Käufe im ${esc(monthName(m
       if(plain)return ctx.itemDialog(plain.type,id);
       throw Error('Dieser Posten ist in diesem Monat nicht mehr aktiv.');
     }
-    const c=cat(i.category),pct=i.monthlyAmount?Math.min(100,i.paid/i.monthlyAmount*100):100,locked=closed(m);
+    const c=cat(i.category),locked=closed(m);
     const meta=[c?.name,i.budgetKind==='variable'?'Budget':'Rechnung',dayOf(i)?'am '+dayOf(i)+'.':'',rhythm(i)||'monatlich'].filter(Boolean).join(' · ');
-    ctx.openDialog(esc(i.title),`<div class="sheet-body"><p class="sheet-meta">${esc(meta)}</p><div class="figures"><div><span>Geplant</span><b>${euro(i.monthlyAmount)}</b></div><div><span>Bezahlt</span><b>${euro(i.paid)}</b></div><div><span>${i.over?'Über Plan':'Offen'}</span><b class="${i.over?'is-negative':''}">${euro(i.over||i.open)}</b></div></div><span class="meter ${i.over?'is-over':''}" style="--c:${themeColor(c?.color||'#5f8f80')}"><span style="width:${pct.toFixed(1)}%"></span></span>${i.payments.length?`<h3 class="sheet-h">Zahlungen im ${esc(monthName(m))}</h3><ul class="rows compact">${i.payments.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<li class="row is-plain"><button class="row-main" data-action="reconcile-edit" data-id="${x.id}"><span class="row-title">${esc(x.title)}</span><span class="row-sub">${esc(shortDate(x.date))}</span></button><span class="row-amount">${euro(x.amount)}</span>${locked?'':`<button class="iconbtn small" data-action="month-pay-delete" data-id="${x.id}" data-plan="${i.id}" aria-label="Zahlung ${euro(x.amount)} entfernen">${icon('trash')}</button>`}</li>`).join('')}</ul>`:'<p class="helper">In diesem Monat noch nichts bezahlt.</p>'}<div class="sheet-actions">${locked?'':`<button class="btn btn-primary" data-action="plan-pay-part" data-id="${i.id}">${icon('plus')}Betrag</button>`}<button class="btn btn-outline" data-action="edit-item" data-id="${i.id}">${icon('edit')}Bearbeiten</button></div><button class="textbtn danger" data-action="month-delete" data-id="${i.id}">Posten ab ${esc(monthName(m))} entfernen</button></div>`);
+    ctx.openDialog(esc(i.title),`<div class="sheet-body"><p class="sheet-meta">${esc(meta)}</p><div class="figures"><div><span>Geplant</span><b>${euro(i.monthlyAmount)}</b></div><div><span>Bezahlt</span><b>${euro(i.paid)}</b></div><div><span>${i.over?'Über Plan':'Offen'}</span><b class="${i.over?'is-negative':''}">${euro(i.over||i.open)}</b></div></div>${planMeter(i.paid,i.monthlyAmount)}${i.payments.length?`<h3 class="sheet-h">Zahlungen im ${esc(monthName(m))}</h3><ul class="rows compact">${i.payments.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<li class="row is-plain"><button class="row-main" data-action="reconcile-edit" data-id="${x.id}"><span class="row-title">${esc(x.title)}</span><span class="row-sub">${esc(shortDate(x.date))}</span></button><span class="row-amount">${euro(x.amount)}</span>${locked?'':`<button class="iconbtn small" data-action="month-pay-delete" data-id="${x.id}" data-plan="${i.id}" aria-label="Zahlung ${euro(x.amount)} entfernen">${icon('trash')}</button>`}</li>`).join('')}</ul>`:'<p class="helper">In diesem Monat noch nichts bezahlt.</p>'}<div class="sheet-actions">${locked?'':`<button class="btn btn-primary" data-action="plan-pay-part" data-id="${i.id}">${icon('plus')}Betrag</button>`}<button class="btn btn-outline" data-action="edit-item" data-id="${i.id}">${icon('edit')}Bearbeiten</button></div><button class="textbtn danger" data-action="month-delete" data-id="${i.id}">Posten ab ${esc(monthName(m))} entfernen</button></div>`);
   }
 
   function targets(r){
