@@ -17,8 +17,8 @@ Diese Beschreibung bezieht sich auf Stand 3.2 (Module) bzw. die unveränderten R
 | `goals.js`, `goals-ui.js` | Wünsche, Preis, Zielmonat, Topfzuordnung und Sparbedarf; UI-Modul nur noch Ziel-Dialog und Aktionen |
 | `scenarios.js`, `scenarios-schema.js`, `planning-schema.js` | Übernahmejournal (`makeJournal`/`undoJournal`) und Validierung gespeicherter Entscheidungen, Zeitpläne, Importregeln und Abschlüsse; keine Oberfläche |
 | `month-ui.js` | Bereich „Monat“: Hauptzahl, Aufteilungsbalken, Postenliste, Schnellerfassung, Detailblatt |
-| `savings-ui.js` | Bereich „Sparen“: Töpfe mit Zielstatus, Topfblatt, Wunsch-Fahrplan |
-| `wishplan.js` | Reihenfolge der Wünsche, Planung nacheinander, Übernahme als eine Zustandsänderung |
+| `savings-ui.js` | Bereich „Sparen“: Ziele und Rücklagen als Kacheln, Blätter, Dialoge Einzahlen / Rate / Neues Ziel / Jahreskosten |
+| `sinking.js` | Jahreskosten glätten: Kandidaten, Optionen, Anlage (Topf, Rate, Entnahme), Status |
 | `year-ui.js` | Bereich „Jahr“: zwölf Monate frei mit Sonderzahlungen, Abos & Verträge mit Jahreskosten, Rückblick Vormonat |
 | `theme.js`, `app.css` | Kategorienfarben und das einzige Stylesheet (Tokens hell/dunkel) |
 | `sw.js`, `manifest.webmanifest` | Offline-Shell und Installationsidentität |
@@ -89,15 +89,23 @@ Unzugeordnete Käufe zählen als tatsächliche Ausgaben. Gehören sie zu einem b
 
 Monatsabschlüsse benötigen explizite Bestätigung tatsächlicher Beträge/Vollständigkeit. Der positive Rest kann einmalig in den nächsten Monat übertragen werden; es gibt geschützte Rücknahme und abhängige Folgeabschlüsse. Nicht pauschal aus fehlenden Ausgabeeinträgen eine Ersparnis ableiten.
 
-## Ziele und Sparplan
+## Ziele, Rücklagen und Sparraten (ab 3.3)
 
-- Ein Ziel allein erzeugt keine Budgetbelastung. Ein Topf darf nur einem offenen Ziel zugeordnet sein.
-- Ein Wunsch ist ein offenes Ziel ohne Topf. Der Fahrplan (`wishplan.js`) spart Wünsche nacheinander in der gespeicherten Reihenfolge an (`settings.wishPlan.order`; neue Wünsche hinten, veraltete IDs werden ignoriert).
-- Monatsbetrag `settings.wishPlan.monthly` (Cent). Jeder Wunsch bekommt ganze Monate: `Monate = ⌈Preis / Monatsbetrag⌉`, Rate = Preis / Monate auf volle Euro aufgerundet, nie über dem Monatsbetrag. Der nächste Wunsch beginnt im Monat nach dem Ende des vorherigen. Beginn: Monat nach dem gewählten, frühestens nach dem aktuellen. Mehr als zehn Jahre werden nicht übernommen.
-- Laufende Sparraten von Zielen mit Topf zählen nicht zum Monatsbetrag; sie werden genannt, und der „knappste Monat“ (frei laut `afterOpen` minus Wunschrate) berücksichtigt sie, weil sie im Monatsplan schon stehen.
-- „Fahrplan übernehmen“ ist eine einzige rückgängig machbare Änderung: je Wunsch ein Topf (0 € ab Startmonat), Ziel bekommt Topf und Zieldatum (= letzter Ratenmonat), eine monatliche Sparrate (bei einem Monat einmalig). Ein Ziel mit Topf wird nicht erneut eingeplant.
-- Der Status eines Ziels mit Topf kommt aus `goalProgress` und berücksichtigt alle geplanten Ein- und Auszahlungen bis zum Termin.
+- Ein Ziel hat einen Topf (neue Ziele legen ihn sofort an, mit „schon angespart“ als Bestand zu Beginn des Monats). Alte Ziele ohne Topf („Wünsche“ bis 3.2) bekommen ihn beim ersten Geld (`ensureGoalPot`). Ein Topf darf nur einem offenen Ziel zugeordnet sein.
+- Zwei Arten zu sparen: **fest** = monatlicher Sparposten mit `potId` (`applyRate`), **flexibel** = einmalige Sparposten im gewählten Monat (`addDeposit`). Beides senkt „frei“ im jeweiligen Monat wie jede Sparrate.
+- `planRate` rechnet Termin → Rate (Fehlbetrag am Termin / Monate ab Start, auf volle Euro aufgerundet) oder Rate → Termin (erster Monat, in dem geplanter Bestand + Rate × Monate ≥ Preis). Dabei zählen bestehende Einmalbeträge, die bisherige feste Rate ab Start wird ersetzt (`withoutRates`). Mehr als 120 Monate werden abgelehnt.
+- Eine neue Rate gilt ab dem gewählten Monat (dieser oder nächster, nie in der Vergangenheit); frühere Monate behalten ihre Rate (Serie über `groupId`, wie bei allen Planänderungen). „Keine“ beendet die feste Rate ab dem Monat; Eingezahltes bleibt.
+- Vorschau „Was die Rate kostet“: frei im Startmonat nach der Rate und der knappste Monat bis zum Ende (höchstens 24 Monate), jeweils `afterOpen` ohne die ersetzte Rate minus neue Rate.
+- Status eines Ziels: `goalProgress` (alle geplanten Ein- und Auszahlungen bis zum Termin). Flexibel mit Termin zeigt die nötige Monatsrate, ohne sie anzulegen.
+- `settings.wishPlan` (3.2) wird nicht mehr benutzt, bleibt aber gültig, damit alte Backups einlesbar sind.
 - Die frühere Kaufprüfung, Szenarien und der gemeinsame Zeitplan sind entfernt. Gespeicherte `decisions` und `timeline` bleiben gültig und werden nicht verändert.
+
+## Jahreskosten glätten (ab 3.3)
+
+- Kandidaten: Ausgaben jährlich mit Zahlungsmonat oder vierteljährlich, ohne Topf, noch nicht gedeckt (keine Entnahme mit `covers` = Postengruppe) und nicht in `settings.sinkingDismissed`. Immer ab dem aktuellen Monat gerechnet, unabhängig vom angezeigten.
+- Anlage in einer rückgängig machbaren Änderung: Topf, monatliche Sparrate (Betrag / 12 bzw. / 3, auf volle Euro) und eine Entnahme (Einnahme mit `potId` und `covers`) im selben Rhythmus ab dem Zahlungsmonat. Im Zahlungsmonat gleicht die Entnahme die Ausgabe aus (Regel 6: Entnahme erhöht den Monatsrahmen einmal, senkt den Topf einmal).
+- Reicht die Zeit bis zur nächsten Zahlung nicht: „now“ = höhere Rate bis zum Zahlungsmonat, danach die normale (zwei Posten einer Serie); „later“ = nächste Zahlung wie bisher aus dem Monat, Rate ab dem Monat danach, Entnahme ab der übernächsten Zahlung. Ist die Zahlung schon im aktuellen Monat fällig, gibt es nur „later“.
+- Ändert sich später der Betrag der Ausgabe, bleibt die Entnahme gleich; der Status der Rücklage zeigt dann, ob es reicht („es fehlen …“).
 
 ## Jahr
 
@@ -113,6 +121,6 @@ Negative Beträge sind keine negativen Tortensegmente. Fehlbeträge ausdrücklic
 - Aufteilungsbalken (Monat): Teil-vom-Ganzen mit fünf Segmenten und 2-px-Lücken; Farbe nach Bedeutung, bewusst neutrale Töne für bereits ausgegebenes und gebundenes Geld; Legende mit Beträgen.
 - Planbalken (`planMeter`): Ausgegebenes neutral bis zum Plan, Überschreitung rot dahinter, Strich am Planbetrag; Maßstab ist der größere Wert.
 - Jahresbalken: eine Reihe in einer Farbe, gewählter Monat kräftig, übrige heller; Achse ab 0 €; Linie „üblich“ = Median der zwölf Monate; Sonderzahlung als Ring (Form statt Farbe).
-- Fahrplan: Zeitleiste mit gemeinsamer Monatsachse, eine Farbe (Sparen), Reihenfolge = Zeilen.
+- Fortschrittsring (Sparen): eine Farbe (`--ring`), Spur neutral, erreicht = Gold (`--ring-done`, Text in `--done-ink`); Rücklagen ohne Ziel zeigen ein Symbol statt Ring. Prozentzahl und Beträge stehen immer daneben.
 
 `planChanges` vergleicht zwei Monatspläne, keine vollständig beobachteten Kontostände oder historischen Istmonate. Revisionen über ihre Serien-ID zusammenfassen; Summe der Treiber muss exakt die Veränderung des freien Betrags ergeben.

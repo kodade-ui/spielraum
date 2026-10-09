@@ -81,6 +81,8 @@ export function validate(s) {
     ids.add(item.id);
   }
   for(const i of s.items)if(i.potId&&(!pots.has(i.potId)||!['saving','income'].includes(i.type)||i.source))fail();
+  // Jahreskosten-Rücklage (ab 3.3): Entnahme verweist auf die Postengruppe der Ausgabe, die sie deckt.
+  for(const i of s.items)if(i.covers!==undefined&&(!id(i.covers)||i.type!=='income'||!i.potId))fail();
   for(const k of s.skips){
     if(typeof k!=='string'||!k.includes('@')||!id(k.split('@')[0])||!validMonth(k.split('@')[1])||k.split('@').length!==2)fail();
   }
@@ -101,11 +103,12 @@ export function validate(s) {
   if(s.settings.analysis){
     if(!obj(s.settings.analysis)||!amount(s.settings.analysis.buffer)||!amount(s.settings.analysis.savingTarget))fail();
   }
-  // Wunsch-Fahrplan (ab 3.2): Monatsbetrag und Reihenfolge der Wünsche. Verweise auf gelöschte Ziele sind erlaubt und werden ignoriert.
+  // Wunsch-Fahrplan (3.2, seit 3.3 ohne Oberfläche): gespeicherte Einstellung bleibt gültig, damit alte Backups weiter einlesbar sind.
   if(s.settings.wishPlan!==undefined){
     const w=s.settings.wishPlan;
     if(!obj(w)||!amount(w.monthly)||w.monthly>100000000||!Array.isArray(w.order)||w.order.length>1000||w.order.some(x=>!id(x)))fail();
   }
+  if(s.settings.sinkingDismissed!==undefined&&(!Array.isArray(s.settings.sinkingDismissed)||s.settings.sinkingDismissed.length>1000||s.settings.sinkingDismissed.some(x=>!id(x))))fail();
   if(s.settings.assignments){
     if(!obj(s.settings.assignments)||Object.keys(s.settings.assignments).length>100000)fail();
     for(const [k,v]of Object.entries(s.settings.assignments))if(k.length>180||!cats.has(v))fail();

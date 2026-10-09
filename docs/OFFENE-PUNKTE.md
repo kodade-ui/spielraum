@@ -4,12 +4,13 @@
 
 Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Prioritäten: (1) größere Anschaffungen durchspielen, (2) weniger manuelle Arbeit, (3) Wünsche zeitlich miteinander vereinbaren. Keine zweite Bankbuchhaltung, keine erneute Analyse-Hauptnavigation. Datenerhalt hat Vorrang vor einem technisch bequemen Neubau.
 
-## Tatsächlich vorhanden (3.2.1)
+## Tatsächlich vorhanden (3.3)
 
 - Drei Bereiche: Monat, Sparen, Jahr; Plus-Taste für die Schnellerfassung.
 - Sofortige Monatsprojektion, erweiterbare Kategorien, monatliche/vierteljährliche/jährliche/einmalige Posten.
 - Monat: eine Hauptzahl „Noch frei“, Rechnungen abhaken, Budgets mit Rest, Käufe ohne Budget mit Zuordnung, Detailblatt.
-- Sparen: Töpfe mit Zielstatus und ein Wunsch-Fahrplan (Reihenfolge, Monatsbetrag, Zeitleiste, Übernahme mit einem Tipp).
+- Sparen: Ziele und Rücklagen als Kacheln mit Fortschrittsring; Einzahlen, wann es passt, oder feste Rate (Termin ↔ Rate) mit Anzeige, was danach frei bleibt; Jahreskosten glätten.
+- Einstellungen: Darstellung Automatisch / Hell / Dunkel.
 - Jahr: zwölf Monate frei mit Sonderzahlungen, Abos & Verträge mit Jahreskosten, Rückblick auf den Vormonat.
 - Lokale Speicherung, Datei-Backup, Wiederherstellung, PWA-Installation und Offline-Shell. Kein Bankkonto verbunden.
 
@@ -36,15 +37,17 @@ Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Priorit�
 
 ## Nächste Schritte
 
-Alle drei Pakete aus dem Rundum-Check und der Wunsch-Fahrplan sind umgesetzt. Vorgeschlagen, aber nicht beauftragt: Kontostand-Abgleich (vom Nutzer vorerst zurückgestellt, Nutzen erschloss sich nicht), Geldfluss-Diagramm, Favoriten in der Schnellerfassung, Backup per Teilen, automatisches Abhaken am Zahlungstag, Suche über Käufe. Hosting-Update-Weg (Worker umbenennen) bleibt umständlich; Pages oder GitHub prüfen.
+Vorgeschlagen, aber nicht beauftragt: „Monat aussetzen“ bei fester Rate (Termin rutscht einen Monat), Kontostand-Abgleich (vom Nutzer zurückgestellt), Geldfluss-Diagramm, Favoriten in der Schnellerfassung, Backup per Teilen, automatisches Abhaken am Zahlungstag, Suche über Käufe. Hosting-Update-Weg (Worker umbenennen) bleibt umständlich; Pages oder GitHub prüfen.
 
-## Vorgemerkt für das nächste Update (vom Nutzer gewünscht, 9. Oktober 2026)
+Offen aus 3.2.1: gemeldete Einzahlung im Oktober trotz Start im Dezember, mit Testdaten nicht nachstellbar.
 
-- Schalter **Automatisch / Hell / Dunkel** in den Einstellungen. Bisher folgt die App nur der Systemeinstellung (`prefers-color-scheme`), ein manuelles Umschalten gibt es nicht. Idee: Wahl lokal speichern (nicht im Datenstand `spielraum.v2`, eigener unkritischer Schlüssel), per `data-theme` am Wurzelelement setzen, `theme-color`-Meta mitführen, Tokens für beide Modi existieren bereits in `app.css`. Kein eigenes Update dafür; wird beim nächsten ohnehin anstehenden Update mitgenommen (SW-Cache dann erhöhen).
+## Erledigt in 3.3 (9. Oktober 2026)
 
-- **Bereich Sparen gestalterisch überarbeiten** (Rückmeldung des Nutzers, 9. Oktober 2026): wirkt wie eine lange, volle, gequetschte und unruhige Liste; die Farben gefallen nicht. Wunsch: ruhiger, eleganter, Farben stimmig aufeinander abgestimmt, mehr Luft. Die Töpfe sollen nicht mehr bloß eine Liste sein, sondern eine eigene, schönere Darstellung bekommen (Gestaltungsfreiheit ausdrücklich erteilt, nicht vorher abstimmen). Gilt für Töpfe, Wunsch-Fahrplan und Hero zusammen. Palette mit dem Dataviz-Validator prüfen (hell und dunkel), Screenshots 360/390 px vorher/nachher. Erst beim nächsten Update, nicht einzeln ausliefern.
+- Sparen neu: Kacheln statt Liste, ruhige Farben, kein Regler/Fahrplan. Ziele flexibel oder mit fester Rate, Einzahlen, „Was die Rate kostet“, Jahreskosten glätten. Schalter Hell/Dunkel. Details: `docs/AENDERUNGEN-3.3.md`.
 
-- *Erledigt in 3.2.1:* Löschen-Knopf im Editor, „Bestand anpassen“ als Hauptknopf, Bestand fortlaufend (`docs/AENDERUNGEN-3.2.1.md`). Offen: gemeldete Einzahlung im Oktober trotz Start im Dezember, nicht nachstellbar.
+## Erledigt in 3.2.1 (9. Oktober 2026)
+
+- Löschen-Knopf im Editor, „Bestand anpassen“ als Hauptknopf, Bestand läuft fort (`docs/AENDERUNGEN-3.2.1.md`).
 
 ## Erledigt in 2.13 (8. Oktober 2026)
 

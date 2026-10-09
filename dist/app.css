@@ -1,4 +1,4 @@
-/* Spielraum 3.1 – ein Stylesheet für die ganze App.
+/* Spielraum 3.3 – ein Stylesheet für die ganze App.
    Aufbau: 1 Tokens · 2 Grundlagen · 3 Rahmen (Kopf, Inhalt, Navigation) · 4 Bausteine
    (Knöpfe, Hinweise, Karten, Formulare, Dialoge) · 5 Monat · 6 Sparen · 7 Jahr · 8 Sonstiges.
    Regel: Farben nur über Tokens, keine Überschreibungen später im File. */
@@ -10,22 +10,36 @@
   --positive:#2f6b4f; --negative:#b0442b; --negative-soft:#f7e4dd; --focus:#3c7d6c;
   --seg-spent:#4b5350; --seg-bills:#adb2ad; --seg-budgets:#c48420; --seg-saving:#4a7fb8; --seg-free:#2e8a5f; --seg-free-soft:#b9dcc9; --seg-rest:#e3e0d7;
   --logo-bg:#1f3f38; --logo-ring:#f4eee1; --logo-gold:#e2a446;
+  --ring:#2c5a4e; --ring-track:#e6e3da; --ring-done:#c9861e; --done-ink:#9c6410; --warn-ink:#93560f;
   --shadow:0 1px 2px rgba(28,40,36,.06),0 8px 24px -12px rgba(28,40,36,.18);
   --radius:18px; --radius-s:12px;
   --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --tabbar-h:64px;
   color-scheme:light;
 }
+/* Dunkel: folgt dem Handy, außer in den Einstellungen ist Hell oder Dunkel fest gewählt (data-theme am Wurzelelement).
+   Beide Blöcke müssen gleich bleiben. */
 @media (prefers-color-scheme:dark){
-  :root{
+  :root:not([data-theme="light"]){
     --bg:#101513; --surface:#18201d; --surface-2:#212a26; --ink:#e7ece9; --muted:#9ba6a0; --faint:#6f7a74; --line:#2a3430;
     --primary:#5c9c88; --primary-ink:#0d1714; --primary-soft:#1f302a; --accent:#e3a64c; --accent-soft:#3a2e1c;
     --positive:#7cc2a2; --negative:#f08f74; --negative-soft:#3b231c; --focus:#8fd0bb;
     --seg-spent:#9aa49f; --seg-bills:#4b5350; --seg-budgets:#b5791c; --seg-saving:#5a8fd0; --seg-free:#3a9a6a; --seg-free-soft:#22493a; --seg-rest:#2a3430;
+    --ring:#6aac96; --ring-track:#26302c; --ring-done:#e3a64c; --done-ink:#e3a64c; --warn-ink:#e9b467;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6);
     color-scheme:dark;
   }
 }
+:root[data-theme="dark"]{
+    --bg:#101513; --surface:#18201d; --surface-2:#212a26; --ink:#e7ece9; --muted:#9ba6a0; --faint:#6f7a74; --line:#2a3430;
+    --primary:#5c9c88; --primary-ink:#0d1714; --primary-soft:#1f302a; --accent:#e3a64c; --accent-soft:#3a2e1c;
+    --positive:#7cc2a2; --negative:#f08f74; --negative-soft:#3b231c; --focus:#8fd0bb;
+    --seg-spent:#9aa49f; --seg-bills:#4b5350; --seg-budgets:#b5791c; --seg-saving:#5a8fd0; --seg-free:#3a9a6a; --seg-free-soft:#22493a; --seg-rest:#2a3430;
+    --ring:#6aac96; --ring-track:#26302c; --ring-done:#e3a64c; --done-ink:#e3a64c; --warn-ink:#e9b467;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6);
+    color-scheme:dark;
+}
+:root[data-theme="light"]{color-scheme:light}
 
 /* 2 · Grundlagen */
 *{box-sizing:border-box}
@@ -273,26 +287,77 @@ dialog.modal[open]{position:fixed;inset:auto 0 0 0}
 .choices-more>summary{font-size:14px;font-weight:600;color:var(--muted);padding:8px 0}
 .choices-more .choices{margin:0}
 
-/* 6 · Sparen: Töpfe und Wünsche */
+/* 6 · Sparen: Ziele und Rücklagen als Kacheln (ab 3.3)
+   Ruhig: eine Ringfarbe, Gold nur für „geschafft“, Warnungen nur als Textfarbe. Keine Topf-Farben. */
 .group-note{margin:8px 4px 0;font-size:13.5px}
 .group .starter-chips{justify-content:flex-start;margin:6px 0 2px}
-.pots{display:grid;gap:10px}
-.pot{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:4px 14px 12px}
-.pot-head{display:flex;align-items:center;width:100%;min-height:58px;text-align:left}
-.pot-head .dot-mark{margin:0 12px 0 2px}
-.pot-name{flex:1;min-width:0;display:grid;gap:1px;font-size:16px;font-weight:600;line-height:1.3;overflow-wrap:anywhere;text-align:left}
-.pot-name small{font-size:13px;font-weight:500;color:var(--muted)}
-.pot-balance{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;margin-left:10px}
-.pot-line,.pot-goal{font-size:13.5px;color:var(--muted)}
-.pot-goal b{color:var(--ink);font-weight:600}
-.meter.goal{height:6px;margin-top:8px}
-.pot-status{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:8px}
-.pot-status .textbtn{min-height:32px;font-size:14px}
-.pot-buffer{font-size:13px;color:var(--muted)}
+.sv-intro{margin:14px 4px 0;color:var(--muted);font-size:14.5px;line-height:1.5}
+.sv-group{margin-top:28px}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;min-height:164px;padding:16px 16px 15px;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);text-align:left}
+.tile>*{max-width:100%}
+.tile .ring{margin-bottom:10px}
+.tile-name{font-size:15.5px;font-weight:620;line-height:1.3;overflow-wrap:break-word;hyphens:auto;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile-amount{font-size:17px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.tile-amount small{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0}
+.tile-line{margin-top:auto;padding-top:6px;font-size:13px;line-height:1.35;color:var(--muted)}
+.tile-line.is-warn{color:var(--warn-ink);font-weight:600}
+.tile-line.is-done{color:var(--done-ink);font-weight:650}
+.tile-line>span{color:var(--muted);font-weight:400}
+.tiles:empty{display:none}
+.sv-group .add-line{margin-top:6px}
+@media (max-width:340px){.tiles{grid-template-columns:1fr}.tile{min-height:0}}
+/* Fortschrittsring */
+.ring{position:relative;flex:none;display:grid;place-items:center;width:var(--size);height:var(--size);color:var(--ink)}
+.ring-svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:3.4}
+.ring-track{stroke:var(--ring-track)}
+.ring-bar{stroke:var(--ring);stroke-linecap:round}
+.ring.is-done .ring-bar{stroke:var(--ring-done)}
+.ring b{position:relative;font-size:calc(var(--size)*.27);font-weight:700;letter-spacing:-.02em}
+.ring b small{font-size:.7em;font-weight:600;color:var(--muted)}
+.ring b .icon{width:calc(var(--size)*.4);height:calc(var(--size)*.4);color:var(--ring-done);stroke-width:2.4}
+.ring.is-plain{border-radius:50%;background:var(--surface-2);color:var(--muted)}
+.ring.is-plain .icon{width:calc(var(--size)*.44);height:calc(var(--size)*.44);stroke-width:1.6}
+/* Hinweis Jahreskosten */
+.sv-hint{display:flex;align-items:center;gap:14px;width:100%;margin-top:12px;padding:14px 14px 14px 16px;border-radius:var(--radius);background:var(--surface-2);text-align:left}
+.sv-hint>.icon{color:var(--ring);width:22px;height:22px}
+.sv-hint span{flex:1;min-width:0;display:grid;gap:3px}
+.sv-hint b{font-size:15px;font-weight:650}
+.sv-hint small{font-size:13.5px;line-height:1.4;color:var(--muted)}
+.sv-hint>.icon:last-child{color:var(--faint);width:18px;height:18px}
+/* Blatt eines Ziels / einer Rücklage */
+.sv-top{display:flex;align-items:center;gap:18px;margin:4px 0 16px}
+.sv-big{font-size:30px;font-weight:750;letter-spacing:-.03em;line-height:1.1}
+.sv-of{font-size:14px;color:var(--muted);margin-top:2px}
+.sv-missing{font-size:14px;font-weight:600;margin-top:6px}
+.sv-text{display:grid;gap:8px;padding:14px 16px;border-radius:var(--radius-s);background:var(--surface-2);font-size:14.5px;line-height:1.5}
+.sv-text b{font-weight:650}
+.sv-preview{min-height:44px;margin-top:14px;font-size:14.5px;line-height:1.5}
+.sv-preview:empty{min-height:0;margin:0}
+.field-label{font-size:14px;font-weight:550;color:var(--muted)}
+/* Auswahl als Segmente (Radio) und als Schalter (Knöpfe) */
+.seg,.seg-buttons{display:flex;gap:4px;background:var(--surface-2);border-radius:14px;padding:4px;margin-top:8px}
+.seg label{flex:1;display:block;position:relative}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span,.seg-buttons button{display:grid;place-items:center;min-height:42px;padding:0 6px;border-radius:11px;font-size:14.5px;font-weight:600;color:var(--muted);text-align:center}
+.seg-buttons button{flex:1}
+.seg input:checked+span,.seg-buttons button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg input:focus-visible+span{outline:3px solid var(--focus);outline-offset:-3px}
+/* Felder je nach Auswahl ein- und ausblenden */
+.sv-form:has(input[value="flex"]:checked) :is(.only-date,.only-rate):not(.only-flex),
+.sv-form:has(input[value="date"]:checked) :is(.only-flex,.only-rate):not(.only-date),
+.sv-form:has(input[value="rate"]:checked) :is(.only-flex,.only-date):not(.only-rate),
+.sv-form:has(input[value="none"]:checked) .form-grid label:not(:last-child){display:none}
+.sv-form:has(input[value="none"]:checked) .only-rate{display:none}
+.opt-list{display:grid;gap:8px}
+.opt-list label{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--radius-s)}
+.opt-list label:has(input:checked){border-color:var(--ring);background:var(--primary-soft)}
+.opt-list input{margin-top:2px;accent-color:var(--ring)}
+.opt-list span{display:grid;gap:2px;font-size:14.5px;font-weight:400;color:var(--ink)}
+.opt-list b{font-weight:650}
+.opt-list small{font-size:13.5px;color:var(--muted);line-height:1.4}
 .chip{display:inline-flex;align-items:center;min-height:26px;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:650;background:var(--surface-2);color:var(--muted)}
-.chip.ok{background:var(--primary-soft);color:var(--positive)}
-.chip.warn{background:var(--accent-soft);color:var(--ink)}
-.pot .add-line{min-height:40px;margin-top:2px;padding-left:0;font-size:14px}
 .btn.small{min-height:38px;padding:6px 12px;font-size:14px;border-radius:12px;flex:none}
 .figures.four{grid-template-columns:repeat(4,minmax(0,1fr))}
 .figures.four b{font-size:15px}
@@ -301,29 +366,6 @@ dialog.modal[open]{position:fixed;inset:auto 0 0 0}
 .sheet-more{margin-top:14px}
 .sheet-more>summary{font-size:14.5px;font-weight:600;color:var(--muted);padding:8px 0}
 .textbtn.small{min-height:32px;font-size:14px}
-/* Wunsch-Fahrplan: Monatsbetrag, Zeitleiste (eine Reihe, eine Farbe), Zusammenfassung */
-.wishplan{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 14px 16px}
-.wp-budget{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:0 12px}
-.wp-budget-label{font-size:14px;font-weight:550;color:var(--muted)}
-.wp-budget-value{font-size:26px;font-weight:740;letter-spacing:-.02em;color:var(--ink)}
-.wp-budget input{grid-column:1/-1}
-.wp-rows{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px}
-.wp-head{display:flex;align-items:center;gap:10px}
-.wp-num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--muted)}
-.wp-title{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;min-height:40px;text-align:left;font-size:15.5px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
-.wp-title small{font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap}
-.wp-move{display:flex;flex:none}
-.wp-track{position:relative;height:8px;border-radius:4px;background:var(--surface-2);margin:2px 0 6px 32px}
-.wp-track i{position:absolute;top:0;bottom:0;min-width:6px;border-radius:4px;background:var(--seg-saving)}
-.wp-sub{margin-left:32px;font-size:13.5px;color:var(--muted);line-height:1.5}
-.wp-sub b{color:var(--ink);font-weight:650}
-.wp-sub .chip{margin-left:4px;vertical-align:1px}
-.wp-axis{position:relative;height:20px;margin:4px 0 0 32px;font-size:11.5px;color:var(--muted)}
-.wp-axis span{position:absolute;top:0;padding-left:5px;border-left:1px solid var(--line);white-space:nowrap;line-height:18px}
-.wp-axis .wp-end{left:auto;right:0;padding:0 5px 0 0;border-left:0;border-right:1px solid var(--line)}
-.wp-summary{display:grid;gap:4px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:14px}
-.wishplan .btn.wide{margin-top:14px}
-.wp-note{margin-top:8px;font-size:13px}
 
 /* 7 · Jahr: zwölf Monate, Abos & Verträge, Rückblick */
 .ycard{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 10px 14px;margin-top:16px}
