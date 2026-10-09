@@ -43,7 +43,7 @@ Offen aus 3.2.1: gemeldete Einzahlung im Oktober trotz Start im Dezember, mit Te
 
 ## Vorgemerkt für das nächste Update (vom Nutzer gewünscht, 9. Oktober 2026, nach 3.3)
 
-- **Sparen: Reihenfolge und Darstellung.** Zuerst Rücklagen, dann Ziele. Beide Bereiche sollen sich optisch klar unterscheiden. Die Ziele-Kacheln mit Ring sind „ok“ und bleiben. Die Rücklagen sollen prominenter werden, „irgendein Graph oder sowas“. Idee (noch nicht abgestimmt): oben eine Grafik mit dem Verlauf aller Rücklagen über die nächsten zwölf Monate, nach Rücklage aufgeteilt, inklusive der Entnahmen bei Jahreskosten. Darunter die Rücklagen als Zeilen mit Betrag und Mini-Verlauf. Farben mit dem Dataviz-Validator prüfen (hell und dunkel). Kein eigenes Update dafür.
+- **Sparen: Reihenfolge und Darstellung.** Zuerst Rücklagen, dann Ziele. Beide Bereiche sollen sich optisch klar unterscheiden. Die Ziele-Kacheln mit Ring sind „ok“ und bleiben. Die Rücklagen sollen prominenter werden, „irgendein Graph oder sowas“. Präzisiert vom Nutzer: KEIN Verlauf (den sieht er beim Weiterklicken der Monate), nur der Stand – wie viel insgesamt und wie viel pro Rücklagentopf, bewusst einfach. Umsetzung: Gesamtsumme groß, darunter ein Aufteilungsbalken (Teil vom Ganzen, ein Segment je Rücklage) und die Rücklagen als Zeilen mit Betrag und Anteil. Farben mit dem Dataviz-Validator prüfen (hell und dunkel). Kein eigenes Update dafür.
 
 ## Erledigt in 3.3 (9. Oktober 2026)
 
