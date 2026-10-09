@@ -1,4 +1,4 @@
-// Bereich „Sparen“ (ab 3.3): Ziele und Rücklagen als Kacheln mit Fortschrittsring, ohne Regler.
+// Bereich „Sparen“ (ab 3.3, Anordnung 3.4): zuerst Rücklagen (Gesamtstand, Aufteilung, Zeilen), dann Ziele als Kacheln mit Ring.
 // Geld kommt per fester Monatsrate oder per Einzahlung, wann es passt. Jahreskosten lassen sich glätten.
 // Rechnet nur über Fachfunktionen: reserveSummary, goalProgress, reconcileMonth, goals.js (Raten) und sinking.js.
 import {euro,amountText,monthName,shiftMonth,currentMonth,totals,projected,money,fieldMoney,validMonth} from './planner.js';
@@ -66,9 +66,26 @@ export function createSavingsUI(ctx){
     const sub=i.kind==='rate'&&g.deadline?'bis '+short(g.deadline):i.kind==='flex'&&i.until&&i.need?whole(i.need)+' im Monat nötig':'';
     return `<button class="tile" data-action="goal-open" data-id="${g.id}">${ring(i.pct,48,i.kind==='done')}<span class="tile-name">${esc(g.title)}</span><span class="tile-amount ${bal<0?'is-negative':''}">${whole(bal)}<small> von ${whole(g.price)}</small></span><span class="tile-line is-${i.kind}">${esc(i.line)}${sub?'<br><span>'+esc(sub)+'</span>':''}</span></button>`;
   }
-  function potTile(p){
-    const i=potInfo(p),mark=i.target?ring(i.pct,48):badge(i.sink?'calendar':'jar',48);
-    return `<button class="tile" data-action="savings-pot" data-id="${p.id}">${mark}<span class="tile-name">${esc(p.name)}</span><span class="tile-amount ${p.balance<0?'is-negative':''}">${whole(p.balance)}${i.target?`<small> von ${whole(i.target)}</small>`:''}</span><span class="tile-line is-${i.kind}">${esc(i.line)}</span></button>`;
+  // Rücklagen: Gesamtstand, Aufteilungsbalken (Teil vom Ganzen) und Zeilen. Farbe folgt dem Topf (Reihenfolge der Anlage),
+  // nicht seiner Größe; ab dem siebten Topf gemeinsam „Weitere“ in Grau. Der Balken zeigt nur positive Bestände.
+  const POT_SLOTS=6;
+  function reserves(rest){
+    const order=S().pots.filter(p=>rest.some(r=>r.id===p.id)).map(p=>p.id);
+    const slot=id=>{const i=order.indexOf(id);return i<POT_SLOTS?'var(--pot-'+(i+1)+')':'var(--pot-rest)'};
+    const total=rest.reduce((n,p)=>n+p.balance,0),pos=rest.filter(p=>p.balance>0),sum=pos.reduce((n,p)=>n+p.balance,0);
+    const segs=[];
+    for(const p of [...pos].sort((a,b)=>b.balance-a.balance)){
+      const i=order.indexOf(p.id);
+      if(i<POT_SLOTS)segs.push({c:slot(p.id),v:p.balance,label:p.name});
+      else{const o=segs.find(x=>x.other);if(o)o.v+=p.balance;else segs.push({c:'var(--pot-rest)',v:p.balance,label:'Weitere',other:true})}
+    }
+    const bar=sum>0&&rest.length>1?`<div class="rbar" role="img" aria-label="Aufteilung: ${esc(segs.map(x=>x.label+' '+euro(x.v)).join(', '))}">${segs.map(x=>`<i style="--c:${x.c};flex-grow:${x.v}" title="${esc(x.label)}: ${euro(x.v)}"></i>`).join('')}</div>`:'';
+    const row=p=>{
+      const i=potInfo(p),share=sum>0&&p.balance>0?Math.round(p.balance/sum*100):0;
+      return `<li class="row"><span class="dot-mark" style="--c:${slot(p.id)}"></span><button class="row-main" data-action="savings-pot" data-id="${p.id}"><span class="row-title">${esc(p.name)}</span><span class="row-sub ${i.kind==='warn'?'is-warn':''}">${esc(i.line)}</span></button><span class="row-amount ${p.balance<0?'is-negative':''}">${euro(p.balance)}${rest.length>1?`<small>${share} %</small>`:''}</span></li>`;
+    };
+    const rows=[...rest].sort((a,b)=>b.balance-a.balance);
+    return {total,html:rest.length?`<div class="rcard"><p class="rcard-label">Insgesamt</p><p class="rcard-total ${total<0?'is-negative':''}">${money2(total)}</p>${bar}<ul class="rows rlist">${rows.map(row).join('')}</ul></div>`:''};
   }
   const addLine=(action,label)=>`<button class="add-line" data-action="${action}">${icon('plus')}${label}</button>`;
 
@@ -79,11 +96,13 @@ export function createSavingsUI(ctx){
     const unlinked=projected(S(),m).filter(i=>i.type==='saving'&&!i.potId);
     const empty=!goals.length&&!s.pots.length;
     const hint=cands.length?`<button class="sv-hint" data-action="sinking-open">${icon('calendar')}<span><b>Jahreskosten glätten</b><small>${cands.length===1?esc(cands[0].item.title)+' kostet':cands.length+' Zahlungen kosten'} ${whole(cands.reduce((n,c)=>n+Math.round(c.amount*12/c.interval),0))} im Jahr. Mit ${whole(cands.reduce((n,c)=>n+c.monthly,0))} im Monat trifft Dich kein Zahlungsmonat mehr unvorbereitet.</small></span>${icon('right')}</button>`:'';
-    return `<section class="hero"><p class="hero-label">Angespart · Ende ${esc(monthName(m))}</p><p class="hero-value ${s.balance<0?'is-negative':''}">${money2(s.balance)}</p><p class="hero-sub">${t.saving?`${euro(t.saving)} gehen im ${esc(monthOnly(m))} in Deine Töpfe · ${euro(free)} frei`:`${euro(free)} im ${esc(monthOnly(m))} frei`}</p></section>
-${unlinked.length?`<div class="notice"><span>${euro(unlinked.reduce((n,i)=>n+i.monthlyAmount,0))} Sparen ohne Topf: im Budget reserviert, aber keinem Topf zugeordnet.</span><button class="textbtn" data-action="pot-link">Zuordnen</button></div>`:''}
-${empty?'<p class="sv-intro">Ein Ziel ist etwas, das Du Dir leisten willst. Eine Rücklage ist Geld mit Zweck, etwa ein Notgroschen. Du sparst mit fester Monatsrate oder zahlst ein, wann es passt.</p>':''}
-<section class="sv-group"><header class="group-head"><h2>Ziele</h2>${goals.length?`<span>${whole(goals.reduce((n,g)=>n+g.price,0))}</span>`:''}</header><div class="tiles">${goals.map(g=>goalTile(g,s.pots.find(p=>p.id===g.potId))).join('')}</div>${addLine('goal-new','Neues Ziel')}</section>
-<section class="sv-group"><header class="group-head"><h2>Rücklagen</h2>${rest.length?`<span>${whole(rest.reduce((n,p)=>n+p.balance,0))}</span>`:''}</header><div class="tiles">${rest.map(potTile).join('')}</div>${addLine('pot-new','Neue Rücklage')}${hint}</section>
+    const r=reserves(rest),inGoals=s.balance-r.total;
+    const goalsHTML=`<section class="sv-group sv-goals"><header class="group-head"><h2>Ziele</h2>${goals.length?`<span>${whole(goals.reduce((n,g)=>n+g.price,0))}</span>`:''}</header><div class="tiles">${goals.map(g=>goalTile(g,s.pots.find(p=>p.id===g.potId))).join('')}</div>${addLine('goal-new','Neues Ziel')}</section>`;
+    return `${unlinked.length?`<div class="notice"><span>${euro(unlinked.reduce((n,i)=>n+i.monthlyAmount,0))} Sparen ohne Topf: im Budget reserviert, aber keinem Topf zugeordnet.</span><button class="textbtn" data-action="pot-link">Zuordnen</button></div>`:''}
+${empty?'<p class="sv-intro">Eine Rücklage ist Geld mit Zweck, etwa ein Notgroschen. Ein Ziel ist etwas, das Du Dir leisten willst. Du sparst mit fester Monatsrate oder zahlst ein, wann es passt.</p>':''}
+<section class="sv-group sv-reserves"><header class="group-head"><h2>Rücklagen · Ende ${esc(monthName(m))}</h2></header>${r.html}${addLine('pot-new','Neue Rücklage')}${hint}</section>
+${goalsHTML}
+<p class="sv-foot">${inGoals?`In Zielen: ${euro(inGoals)} · `:''}${t.saving?`${euro(t.saving)} gehen im ${esc(monthOnly(m))} in Töpfe · `:''}${euro(free)} im ${esc(monthOnly(m))} frei</p>
 ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.length}</span></summary><ul class="rows">${done.map(g=>`<li class="row is-plain"><button class="row-main" data-action="goal-edit" data-id="${g.id}"><span class="row-title">${esc(g.title)}</span><span class="row-sub">${euro(g.price)}</span></button><button class="textbtn" data-action="goal-reopen" data-id="${g.id}">Wieder öffnen</button></li>`).join('')}</ul></details>`:''}`;
   }
 

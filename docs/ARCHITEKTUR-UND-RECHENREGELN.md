@@ -121,6 +121,7 @@ Negative Beträge sind keine negativen Tortensegmente. Fehlbeträge ausdrücklic
 - Aufteilungsbalken (Monat): Teil-vom-Ganzen mit fünf Segmenten und 2-px-Lücken; Farbe nach Bedeutung, bewusst neutrale Töne für bereits ausgegebenes und gebundenes Geld; Legende mit Beträgen.
 - Planbalken (`planMeter`): Ausgegebenes neutral bis zum Plan, Überschreitung rot dahinter, Strich am Planbetrag; Maßstab ist der größere Wert.
 - Jahresbalken: eine Reihe in einer Farbe, gewählter Monat kräftig, übrige heller; Achse ab 0 €; Linie „üblich“ = Median der zwölf Monate; Sonderzahlung als Ring (Form statt Farbe).
+- Rücklagen (Sparen): Gesamtstand groß, darunter ein Aufteilungsbalken (Teil vom Ganzen, nur positive Bestände, 2-px-Lücken) und Zeilen mit Betrag und Anteil, die zugleich die Legende sind. Farbe je Topf nach Anlagereihenfolge (`--pot-1…6`, mit dem Dataviz-Validator hell/dunkel geprüft), ab dem siebten Topf Grau „Weitere“. Bei nur einer Rücklage kein Balken.
 - Fortschrittsring (Sparen): eine Farbe (`--ring`), Spur neutral, erreicht = Gold (`--ring-done`, Text in `--done-ink`); Rücklagen ohne Ziel zeigen ein Symbol statt Ring. Prozentzahl und Beträge stehen immer daneben.
 
 `planChanges` vergleicht zwei Monatspläne, keine vollständig beobachteten Kontostände oder historischen Istmonate. Revisionen über ihre Serien-ID zusammenfassen; Summe der Treiber muss exakt die Veränderung des freien Betrags ergeben.

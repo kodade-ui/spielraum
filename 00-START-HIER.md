@@ -1,8 +1,8 @@
 # Spielraum an Claude übergeben
 
-Stand: 9. Oktober 2026 · App-Version 3.3 (Übergabe von GPT: 2.12, 6. Oktober 2026) · Deutsch · Android-PWA · https://spielraum-k7.rotkehlchen42.workers.dev/
+Stand: 9. Oktober 2026 · App-Version 3.4 (Übergabe von GPT: 2.12, 6. Oktober 2026) · Deutsch · Android-PWA · https://spielraum-k7.rotkehlchen42.workers.dev/
 
-Änderungen seit der Übergabe: `docs/AENDERUNGEN-2.13.md`, `docs/AENDERUNGEN-3.0.md`, `docs/AENDERUNGEN-3.1.md`, `docs/AENDERUNGEN-3.2.md`, `docs/AENDERUNGEN-3.2.1.md`, `docs/AENDERUNGEN-3.3.md`.
+Änderungen seit der Übergabe: `docs/AENDERUNGEN-2.13.md`, `docs/AENDERUNGEN-3.0.md`, `docs/AENDERUNGEN-3.1.md`, `docs/AENDERUNGEN-3.2.md`, `docs/AENDERUNGEN-3.2.1.md`, `docs/AENDERUNGEN-3.3.md`, `docs/AENDERUNGEN-3.4.md`.
 
 Dieses Paket enthält die vollständige statische App, ihre Tests, vorhandene Icons und eine Übergabe. Deine persönlichen Eingaben sind nicht enthalten. Die bestehende App wurde für den Export nicht verändert.
 

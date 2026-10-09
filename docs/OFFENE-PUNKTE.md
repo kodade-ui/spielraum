@@ -4,12 +4,12 @@
 
 Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Prioritäten: (1) größere Anschaffungen durchspielen, (2) weniger manuelle Arbeit, (3) Wünsche zeitlich miteinander vereinbaren. Keine zweite Bankbuchhaltung, keine erneute Analyse-Hauptnavigation. Datenerhalt hat Vorrang vor einem technisch bequemen Neubau.
 
-## Tatsächlich vorhanden (3.3)
+## Tatsächlich vorhanden (3.4)
 
 - Drei Bereiche: Monat, Sparen, Jahr; Plus-Taste für die Schnellerfassung.
 - Sofortige Monatsprojektion, erweiterbare Kategorien, monatliche/vierteljährliche/jährliche/einmalige Posten.
 - Monat: eine Hauptzahl „Noch frei“, Rechnungen abhaken, Budgets mit Rest, Käufe ohne Budget mit Zuordnung, Detailblatt.
-- Sparen: Ziele und Rücklagen als Kacheln mit Fortschrittsring; Einzahlen, wann es passt, oder feste Rate (Termin ↔ Rate) mit Anzeige, was danach frei bleibt; Jahreskosten glätten.
+- Sparen: zuerst Rücklagen mit Gesamtstand und Aufteilung je Topf, dann Ziele als Kacheln mit Fortschrittsring; Einzahlen, wann es passt, oder feste Rate (Termin ↔ Rate) mit Anzeige, was danach frei bleibt; Jahreskosten glätten.
 - Einstellungen: Darstellung Automatisch / Hell / Dunkel.
 - Jahr: zwölf Monate frei mit Sonderzahlungen, Abos & Verträge mit Jahreskosten, Rückblick auf den Vormonat.
 - Lokale Speicherung, Datei-Backup, Wiederherstellung, PWA-Installation und Offline-Shell. Kein Bankkonto verbunden.
@@ -41,9 +41,9 @@ Vorgeschlagen, aber nicht beauftragt: „Monat aussetzen“ bei fester Rate (Ter
 
 Offen aus 3.2.1: gemeldete Einzahlung im Oktober trotz Start im Dezember, mit Testdaten nicht nachstellbar.
 
-## Vorgemerkt für das nächste Update (vom Nutzer gewünscht, 9. Oktober 2026, nach 3.3)
+## Erledigt in 3.4 (9. Oktober 2026)
 
-- **Sparen: Reihenfolge und Darstellung.** Zuerst Rücklagen, dann Ziele. Beide Bereiche sollen sich optisch klar unterscheiden. Die Ziele-Kacheln mit Ring sind „ok“ und bleiben. Die Rücklagen sollen prominenter werden, „irgendein Graph oder sowas“. Präzisiert vom Nutzer: KEIN Verlauf (den sieht er beim Weiterklicken der Monate), nur der Stand – wie viel insgesamt und wie viel pro Rücklagentopf, bewusst einfach. Umsetzung: Gesamtsumme groß, darunter ein Aufteilungsbalken (Teil vom Ganzen, ein Segment je Rücklage) und die Rücklagen als Zeilen mit Betrag und Anteil. Farben mit dem Dataviz-Validator prüfen (hell und dunkel). Kein eigenes Update dafür.
+- Sparen: zuerst Rücklagen (Gesamtstand, Aufteilungsbalken je Topf, Zeilen mit Betrag und Anteil), dann Ziele als Kacheln. Kein Verlauf, auf Wunsch des Nutzers bewusst einfach. Details: `docs/AENDERUNGEN-3.4.md`.
 
 ## Erledigt in 3.3 (9. Oktober 2026)
 
