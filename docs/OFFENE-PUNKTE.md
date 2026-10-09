@@ -4,7 +4,7 @@
 
 Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Prioritäten: (1) größere Anschaffungen durchspielen, (2) weniger manuelle Arbeit, (3) Wünsche zeitlich miteinander vereinbaren. Keine zweite Bankbuchhaltung, keine erneute Analyse-Hauptnavigation. Datenerhalt hat Vorrang vor einem technisch bequemen Neubau.
 
-## Tatsächlich vorhanden (3.2)
+## Tatsächlich vorhanden (3.2.1)
 
 - Drei Bereiche: Monat, Sparen, Jahr; Plus-Taste für die Schnellerfassung.
 - Sofortige Monatsprojektion, erweiterbare Kategorien, monatliche/vierteljährliche/jährliche/einmalige Posten.
@@ -44,8 +44,7 @@ Alle drei Pakete aus dem Rundum-Check und der Wunsch-Fahrplan sind umgesetzt. Vo
 
 - **Bereich Sparen gestalterisch überarbeiten** (Rückmeldung des Nutzers, 9. Oktober 2026): wirkt wie eine lange, volle, gequetschte und unruhige Liste; die Farben gefallen nicht. Wunsch: ruhiger, eleganter, Farben stimmig aufeinander abgestimmt, mehr Luft. Die Töpfe sollen nicht mehr bloß eine Liste sein, sondern eine eigene, schönere Darstellung bekommen (Gestaltungsfreiheit ausdrücklich erteilt, nicht vorher abstimmen). Gilt für Töpfe, Wunsch-Fahrplan und Hero zusammen. Palette mit dem Dataviz-Validator prüfen (hell und dunkel), Screenshots 360/390 px vorher/nachher. Erst beim nächsten Update, nicht einzeln ausliefern.
 
-- **Fehler seit 3.0: Einnahmen, Rücklagen und Topf-Bewegungen lassen sich nicht mehr löschen.** In 2.12 hatte jede Zeile ein Löschen-Kreuz (`delete-item`). Seit 3.0 gibt es „Posten ab … entfernen“ nur im Detailblatt für Ausgaben (`month-ui.js` `itemSheet`); Einnahmen/Rücklagen öffnen direkt den Editor (`itemDialog`), und der hat keinen Löschen-Knopf. Der Handler `delete-item` existiert noch. Lösung: Löschen-Knopf im Editor (bei bestehendem Posten) mit demselben Verhalten wie `deletePost` (inkl. Rückgängig). Test ergänzen.
-- **Bestand eines Topfs anpassen ohne Einnahme:** „Bestand korrigieren“ existiert (`correctPot`, erzeugt keinen Posten), ist im Topfblatt aber nur ein kleiner Textlink unter den großen Knöpfen Einzahlung/Entnahme, die dagegen Planposten anlegen. Wird übersehen. Lösung: im Topfblatt prominent als „Bestand anpassen“ führen, Einzahlung/Entnahme als „einplanen“ benennen und erklären.
+- *Erledigt in 3.2.1:* Löschen-Knopf im Editor, „Bestand anpassen“ als Hauptknopf, Bestand fortlaufend (`docs/AENDERUNGEN-3.2.1.md`). Offen: gemeldete Einzahlung im Oktober trotz Start im Dezember, nicht nachstellbar.
 
 ## Erledigt in 2.13 (8. Oktober 2026)
 

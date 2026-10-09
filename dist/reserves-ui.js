@@ -1,6 +1,6 @@
 import {themeColor} from './theme.js';
 import {euro,fieldMoney,money,projected} from './planner.js';
-import {reserveSummary,createPot,correctPot} from './reserves.js';
+import {reserveSummary,createPot,correctPot,laterCheckpoints} from './reserves.js';
 export function createReserveUI(ctx){
   const {esc}=ctx,potById=id=>ctx.state.pots.find(p=>p.id===id);
   const get=()=>reserveSummary(ctx.state,ctx.month);
@@ -22,8 +22,10 @@ export function createReserveUI(ctx){
     });
   }
   function correction(id){
-    const p=potById(id),r=get().pots.find(p=>p.id===id);
-    ctx.openDialog('Bestand anpassen',`<form><p class="bodycopy"><strong>${esc(p.name)}</strong> · Trage den Bestand zu Beginn eines Monats ein. Ab dort wird mit diesem Betrag weitergerechnet; frühere Monate behalten ihren Verlauf.</p><div class="form-grid spaced"><label><span>Bestand (€)</span><input name="balance" value="${fieldMoney(Math.max(0,r.opening))}" inputmode="decimal" required></label><label><span>Zu Monatsbeginn</span><input name="month" type="month" value="${ctx.month}" min="2000-01" max="2100-12" required></label></div><p class="helper">Das korrigiert nur den Topfbestand. Es erzeugt keine Einnahme oder Ausgabe im Monatsplan.</p><div class="form-footer"><button type="button" class="btn btn-outline" data-action="close">Abbrechen</button><button type="submit" class="btn btn-primary">Bestand speichern</button></div></form>`,form=>{
+    const p=potById(id),r=get().pots.find(p=>p.id===id),first=p.checkpoints.map(c=>c.month).sort()[0];
+    const later=laterCheckpoints(p,ctx.month).filter(c=>!(c.month===first&&c.balance===0));
+    const hint=later.length?`<p class="helper spaced">Achtung: Für ${later.map(c=>esc(new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric'}).format(new Date(c.month+'-01T12:00:00')))+' ist ein eigener Bestand von '+euro(c.balance)+' eingetragen').join(' und für ')}. Ab dort gilt wieder dieser Wert. Willst Du den alten Wert nicht mehr, entferne ihn im Topf unter „Eingetragene Bestände“.</p>`:'';
+    ctx.openDialog('Bestand anpassen',`<form><p class="bodycopy"><strong>${esc(p.name)}</strong> · Trage den Bestand zu Beginn eines Monats ein. Ab dort wird mit diesem Betrag weitergerechnet; frühere Monate behalten ihren Verlauf.</p><div class="form-grid spaced"><label><span>Bestand (€)</span><input name="balance" value="${fieldMoney(Math.max(0,r.opening))}" inputmode="decimal" required></label><label><span>Zu Monatsbeginn</span><input name="month" type="month" value="${ctx.month}" min="2000-01" max="2100-12" required></label></div><p class="helper">Das korrigiert nur den Topfbestand. Es erzeugt keine Einnahme oder Ausgabe im Monatsplan. Der Betrag gilt ab diesem Monat und läuft danach mit Deinen geplanten Einzahlungen weiter.</p>${hint}<div class="form-footer"><button type="button" class="btn btn-outline" data-action="close">Abbrechen</button><button type="submit" class="btn btn-primary">Bestand speichern</button></div></form>`,form=>{
       const fd=new FormData(form),n=correctPot(ctx.state,id,fd.get('month'),money(fd.get('balance')));
       if(ctx.commitUndo(n,'Bestand angepasst'))close();
     });

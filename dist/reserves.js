@@ -39,10 +39,17 @@ export function correctPot(state,id,month,balance){
   const n=structuredClone(state),pot=n.pots.find(p=>p.id===id);
   if(!pot)throw Error('Dieser Topf ist nicht mehr vorhanden.');
   if(!validMonth(month))throw Error('Bitte einen gültigen Monat wählen.');
-  pot.checkpoints=pot.checkpoints.filter(c=>c.month!==month);
+  // Ein Startbestand von 0 € in einem späteren Monat (z. B. aus dem Wunsch-Fahrplan) ist nur eine Startmarke.
+  // Trägt man davor einen echten Bestand ein, würde sie ihn sonst wieder auf 0 € zurücksetzen.
+  const first=pot.checkpoints.map(c=>c.month).sort()[0];
+  pot.checkpoints=pot.checkpoints.filter(c=>c.month!==month&&!(c.month===first&&first>month&&c.balance===0));
   pot.checkpoints.push({month,balance});
   pot.checkpoints.sort((a,b)=>a.month.localeCompare(b.month));
   return validate(n);
+}
+// Später eingetragene Bestände: Sie gelten ab ihrem Monat und ersetzen dort den fortgeschriebenen Wert.
+export function laterCheckpoints(pot,month){
+  return pot.checkpoints.filter(c=>c.month>month).sort((a,b)=>a.month.localeCompare(b.month));
 }
 export function reserveForecast(state,month,count=6){
   return Array.from({length:count},(_,i)=>shiftMonth(month,i)).filter(validMonth).map(m=>({month:m,...reserveSummary(state,m)}));

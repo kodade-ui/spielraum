@@ -153,5 +153,17 @@ await click({view:'year'});assert.match(page(),/Frei in 12 Monaten/);assert.equa
 const pickMonth=shift(currentMonth(),3);await click({action:'year-pick',month:pickMonth});assert.match(page(),new RegExp('data-month="'+pickMonth+'" aria-pressed="true"'));
 await click({action:'next'});assert.match(page(),/Rückblick/);assert.match(page(),/Ausgegeben/);await click({action:'year-open',month:currentMonth()});assert.match(page(),/view-plan/);assert.match(page(),/Noch frei im/);
 }
+
+// 3.2.1: Einnahmen und Rücklagen lassen sich im Editor löschen (mit Rückgängig); Topfblatt führt „Bestand anpassen“ vorn.
+{
+await click({view:'plan'});
+const inc=state().items.find(i=>i.title==='Gehalt für Ziele'),count=state().items.length;
+await click({action:'edit-item',id:inc.id});assert.match(get('#dialog').innerHTML,/data-action="delete-item"/);assert.match(get('#dialog').innerHTML,/entfernen/);
+await click({action:'delete-item',id:inc.id});assert.ok(!totals(state(),currentMonth()).items.some(i=>i.id===inc.id));assert.ok(state().items.length<=count);assert.match(get('#toast').innerHTML,/Rückgängig/);
+await click({action:'undo'});assert.ok(totals(state(),currentMonth()).items.some(i=>i.id===inc.id));
+await click({view:'savings'});const pot=state().pots.find(p=>p.name==='Notgroschen');await click({action:'savings-pot',id:pot.id});
+const sheet=get('#dialog').innerHTML;assert.ok(sheet.indexOf('data-action="pot-correct"')<sheet.indexOf('data-action="pot-deposit"'));assert.match(sheet,/Einzahlung einplanen/);await click({action:'close'});
+}
+console.log('PASS: delete button in the item editor with undo; pot sheet leads with adjusting the balance.');
 console.log('PASS: wish plan slider (live and saved), reordering, one-tap adoption of all wishes with undo and duplicate protection, goal preselects pot, pot sheet; year bars, month pick, contracts and previous-month review.');
 process.exit(0);
