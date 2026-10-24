@@ -171,9 +171,9 @@ console.log('PASS: delete button in the item editor with undo; pot sheet offers 
 {
 const {reconcileMonth}=await import('../dist/reconciliation.js');const {reserveSummary:rs}=await import('../dist/reserves.js');
 await click({action:'year-open',month:currentMonth()});assert.match(page(),/Auf dem Konto, geschätzt/);
-const r=reconcileMonth(state(),currentMonth()),cash=r.availableIncome-r.actualTotal;
-assert.equal(cash-r.fixedOpen-r.variableOpen-r.plannedSaving,r.afterOpen,'Rechenweg geht auf');
-await click({action:'month-cash'});const sheet=get('#dialog').innerHTML;assert.match(sheet,/Schon bezahlt und ausgegeben/);assert.match(sheet,/Sparen am Monatsende/);assert.ok(sheet.includes(new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(cash/100)));await click({action:'close'});
+const r=reconcileMonth(state(),currentMonth()),cash=r.availableIncome-r.plannedSaving-r.actualTotal;
+assert.ok(r.plannedSaving>0,'Testmonat hat Sparraten');assert.equal(cash-r.fixedOpen-r.variableOpen,r.afterOpen,'Rechenweg geht auf');
+await click({action:'month-cash'});const sheet=get('#dialog').innerHTML;assert.match(sheet,/Schon bezahlt und ausgegeben/);assert.match(sheet,/Sparen, gleich mit dem Gehalt/);assert.doesNotMatch(sheet,/Sparen am Monatsende/);assert.ok(sheet.includes(new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(cash/100)));await click({action:'close'});
 await click({action:'next'});assert.doesNotMatch(page(),/Auf dem Konto, geschätzt/);await click({action:'prev'});
 await click({view:'savings'});assert.match(page(),/Rücklagen · heute/);const pot=state().pots.find(p=>p.name==='Urlaub');
 assert.match(page(),/sv-info/);assert.ok(page().includes('data-id="'+pot.id+'"'));

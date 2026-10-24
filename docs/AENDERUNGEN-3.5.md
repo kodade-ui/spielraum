@@ -15,7 +15,7 @@ Stand: 24. Oktober 2026 · Auslöser: Wünsche des Nutzers.
 
 ## Technisch
 
-- `month-ui.js`: neu sind `cash(r)` (= `availableIncome − actualTotal`) und das Blatt `month-cash`. Der Rechenweg geht genau auf: Kontostand − offene Rechnungen − Rest in Budgets − Sparen = `afterOpen`.
+- `month-ui.js`: neu sind `cash(r)` (in 3.5.1 korrigiert auf `availableIncome − plannedSaving − actualTotal`) und das Blatt `month-cash`. Der Rechenweg geht genau auf: Kontostand − offene Rechnungen − Rest in Budgets − Sparen = `afterOpen`.
 - `savings-ui.js`: neu sind `isNow`, `atNow` (Stand = `opening` im laufenden Monat), der Hinweis `sv-info` und die doppelte Angabe in den Blättern. Die Rechenlogik (`reserveSummary`, `goalProgress`) ist unverändert.
 - Service-Worker-Cache `v3-7`. Keine Datenänderung, keine Migration.
 

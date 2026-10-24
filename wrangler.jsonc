@@ -1,8 +1,0 @@
-// Cloudflare-Konfiguration für automatische Veröffentlichung aus GitHub (Workers Builds).
-// Der Name MUSS dem Worker im Cloudflare-Dashboard entsprechen, sonst schlägt der Build fehl.
-// Adresse und damit der Datenbereich der installierten App bleiben gleich.
-{
-  "name": "spielraum-k7",
-  "compatibility_date": "2026-10-01",
-  "assets": { "directory": "./dist" }
-}
