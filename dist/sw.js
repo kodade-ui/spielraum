@@ -1,5 +1,5 @@
-const CACHE = 'spielraum-shell-v2-15';
-const ASSETS = ['./refinement.css', './purchase.js', './purchase-ui.js', './budget-insights.js', './reconciliation-graphics.js', './plan-payments-ui.js', './planning-schema.js', './timeline.js', './timeline-ui.js', './decision-assistant.js', './reconciliation.js', './reconciliation-ui.js', './scenarios-schema.js', './scenarios.js', './scenarios-ui.js', './goals.js', './goals-ui.js', './theme.js', './actuals.js', './actuals-ui.js', './reserves.js', './reserves-ui.js', './app-icon-v3.svg', './app-icon-v3-192.png', './app-icon-v3-512.png', './app-icon-v3-1024.png', './app-icon-v3-maskable-512.png', './intelligence.js', './planner.css', './planner-ui.js', './planner.js', './legacy.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const CACHE = 'spielraum-shell-v3-7';
+const ASSETS = ['./app.css', './planner-ui.js', './month-ui.js', './savings-ui.js', './year-ui.js', './sinking.js', './planner.js', './legacy.js', './intelligence.js', './reserves.js', './reserves-ui.js', './actuals.js', './actuals-ui.js', './goals.js', './goals-ui.js', './reconciliation.js', './reconciliation-ui.js', './plan-payments-ui.js', './budget-insights.js', './planning-schema.js', './scenarios.js', './scenarios-schema.js', './theme.js', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './apple-touch-icon.png', './icon-shortcut-192.png'];
 self.addEventListener('install', event => event.waitUntil((async () => {
   const cache = await caches.open(CACHE);
   await cache.addAll(ASSETS.map(url=>new Request(url,{credentials:'include',cache:'reload'})));
@@ -17,7 +17,9 @@ self.addEventListener('activate', event => event.waitUntil((async () => {
 self.addEventListener('fetch', event => {
   if(event.request.method !== 'GET' || new URL(event.request.url).origin !== location.origin) return;
   if(event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request).catch(async () => await caches.match('./index.html') || Response.error()));
+    // Auch bei Server-Fehlern (z. B. 404, wenn das Hosting ausfällt) die gespeicherte App zeigen,
+    // damit Backup und Daten erreichbar bleiben.
+    event.respondWith(fetch(event.request).then(async response => response.ok ? response : (await caches.match('./index.html')) || response).catch(async () => await caches.match('./index.html') || Response.error()));
     return;
   }
   const path = new URL(event.request.url).pathname;

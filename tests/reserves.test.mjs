@@ -12,3 +12,17 @@ test('Manual correction is a new starting point and does not modify earlier mont
 test('Linking an existing saving does not create a second expense; backup validation preserves pots',()=>{const s=setup(),id=s.pots[0].id;s.items.push(makeItem('old-saving',30000,'saving'));const before=totals(s,'2026-11').remaining;s.items[1].potId=id;assert.equal(totals(s,'2026-11').remaining,before);assert.equal(reserveSummary(s,'2026-11').balance,130000);assert.deepEqual(parseBackup(JSON.stringify(s)),s);const bad=structuredClone(s);bad.items[1].potId='missing';assert.throws(()=>validate(bad));const invalid=structuredClone(s);invalid.pots[0].checkpoints.push({month:'2026-09',balance:42});assert.throws(()=>validate(invalid));});
 test('Multiple starting months, annual monthly provisions and deficits reconcile with the total',()=>{let s=setup();s=createPot(s,{name:'Bonuspuffer',balance:24000,month:'2026-11'});const id=s.pots[1].id;s.items.push(makeItem('annual-share',12000,'income','2026-11',id,'year'));assert.equal(reserveSummary(s,'2026-10').balance,100000);assert.equal(reserveSummary(s,'2026-11').opening,124000);assert.equal(reserveSummary(s,'2026-11').balance,123000);s.items.push(makeItem('overdraw',30000,'income','2026-12',id,'once'));const r=reserveSummary(s,'2026-12');assert.equal(r.pots[1].balance,-8000);assert.equal(r.balance,92000);assert.equal(reserveForecast(s,'2026-11',2)[1].balance,r.balance);});
 test('Withdrawal does not suppress the inherited budget allowance',()=>{const s=setup();s.items=[{...makeItem('allowance',250000,'income','2026-09'),source:'legacy-budget',defaultAmount:250000},makeItem('withdraw',10000,'income','2026-09',s.pots[0].id,'once')];assert.equal(totals(s,'2026-09').income,260000);});
+
+test('A balance entered before a later zero start marker carries on and is not reset to zero',()=>{
+  let s=createPot(enhanceState(blank()),{name:'Wunsch',balance:0,month:'2026-12'});const id=s.pots[0].id;
+  s.items.push(makeItem('rate',15000,'saving','2026-12',id));
+  s=correctPot(s,id,'2026-10',50000);
+  const at=m=>reserveSummary(s,m).pots[0];
+  assert.equal(at('2026-10').deposits,0);assert.equal(at('2026-11').balance,50000);assert.equal(at('2026-12').opening,50000);assert.equal(at('2026-12').balance,65000);assert.equal(at('2027-01').balance,80000);
+  assert.equal(s.pots[0].checkpoints.length,1);
+});
+test('An explicitly entered later balance with money in it stays and keeps replacing the carried value',()=>{
+  let s=createPot(enhanceState(blank()),{name:'Urlaub',balance:100000,month:'2026-12'});const id=s.pots[0].id;
+  s=correctPot(s,id,'2026-10',50000);
+  assert.equal(s.pots[0].checkpoints.length,2);assert.equal(reserveSummary(s,'2026-11').pots[0].balance,50000);assert.equal(reserveSummary(s,'2026-12').pots[0].balance,100000);
+});

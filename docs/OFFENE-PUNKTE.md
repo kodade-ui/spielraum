@@ -4,15 +4,58 @@
 
 Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Prioritäten: (1) größere Anschaffungen durchspielen, (2) weniger manuelle Arbeit, (3) Wünsche zeitlich miteinander vereinbaren. Keine zweite Bankbuchhaltung, keine erneute Analyse-Hauptnavigation. Datenerhalt hat Vorrang vor einem technisch bequemen Neubau.
 
-## Tatsächlich vorhanden
+## Tatsächlich vorhanden (3.5)
 
-- Vier Hauptbereiche: Monatsplan, Rücklagen, Ausgaben, Ziele.
+- Drei Bereiche: Monat, Sparen, Jahr; Plus-Taste für die Schnellerfassung.
 - Sofortige Monatsprojektion, erweiterbare Kategorien, monatliche/vierteljährliche/jährliche/einmalige Posten.
-- Verknüpfte Rücklagentöpfe mit Anfangsbeständen und geplanten Bewegungen.
-- Eine gemeinsame Ausgabenansicht mit Abhaken, Teilbeträgen, zusätzlichen Einkäufen, Zuordnung, Diagrammen und Journal.
-- Optionale lokale CSV-Verarbeitung und bestätigter Monatsabschluss. Kein Bankkonto verbunden.
-- Ziele, Zielzeitplan, „Kauf prüfen“ direkt am Ziel, fortgeschrittene alte Szenarien hinter einer sekundären Aufklappfunktion.
-- Lokale Speicherung, Datei-Backup, Wiederherstellung, PWA-Installation und Offline-Shell.
+- Monat: eine Hauptzahl „Noch frei“, Rechnungen abhaken, Budgets mit Rest, Käufe ohne Budget mit Zuordnung, Detailblatt.
+- Sparen: zuerst Rücklagen mit Gesamtstand und Aufteilung je Topf, dann Ziele als Kacheln mit Fortschrittsring; Einzahlen, wann es passt, oder feste Rate (Termin ↔ Rate) mit Anzeige, was danach frei bleibt; Jahreskosten glätten.
+- Einstellungen: Darstellung Automatisch / Hell / Dunkel.
+- Jahr: zwölf Monate frei mit Sonderzahlungen, Abos & Verträge mit Jahreskosten, Rückblick auf den Vormonat.
+- Lokale Speicherung, Datei-Backup, Wiederherstellung, PWA-Installation und Offline-Shell. Kein Bankkonto verbunden.
+
+## Erledigt in 3.2 (9. Oktober 2026)
+
+- Wunsch-Fahrplan ersetzt den Schieber je Wunsch.
+- Diagramme überarbeitet: geprüfte Farben im Aufteilungsbalken, Planbalken mit sichtbarer Überschreitung, Jahresbalken mit Linie „üblich“.
+- Details: `docs/AENDERUNGEN-3.2.md`.
+
+## Erledigt in 3.1 (9. Oktober 2026) · Paket 2 und 3
+
+- Rücklagen und Ziele als ein Bereich „Sparen“, Sparrechner mit Schieber, Sparplan mit einem Tipp.
+- Bereich „Jahr“ ersetzt „Ein Blick nach vorn“.
+- Entfernte Funktionen auch im Code aufgeräumt (Module, Renderer, Tests, CSS). Datenvalidierung für Altdaten bleibt.
+- Details: `docs/AENDERUNGEN-3.1.md`.
+
+## Erledigt in 3.0 (8. Oktober 2026) · Paket 1
+
+- Neues Stylesheet, Dunkelmodus, untere Navigation mit Plus-Taste.
+- Bereich „Monat“ ersetzt Monatsplan + Ausgaben: eine Hauptzahl „Noch frei“, Aufteilungsbalken, eine Liste (Rechnungen, Budgets, Ohne Budget, Sparen, Einnahmen), Detailblatt je Posten.
+- Schnellerfassung (auch per App-Icon lang drücken), Ein-Tipp-Zuordnung von Käufen ohne Budget.
+- Kauf prüfen, Szenarien, Zeitplan, CSV-Import, Monatsabschluss aus der Oberfläche entfernt (Daten bleiben).
+- Neues Logo, Icons als Dateien, Startfarben passend zur App.
+
+## Nächste Schritte
+
+Vorgeschlagen, aber nicht beauftragt: „Monat aussetzen“ bei fester Rate (Termin rutscht einen Monat), Kontostand-Abgleich (vom Nutzer zurückgestellt), Geldfluss-Diagramm, Favoriten in der Schnellerfassung, Backup per Teilen, automatisches Abhaken am Zahlungstag, Suche über Käufe. Hosting-Update-Weg (Worker umbenennen) bleibt umständlich; Pages oder GitHub prüfen.
+
+Offen aus 3.2.1: gemeldete Einzahlung im Oktober trotz Start im Dezember, mit Testdaten nicht nachstellbar.
+
+## Erledigt in 3.5 (24. Oktober 2026)
+
+- Monat: „Auf dem Konto, geschätzt“ mit Rechenweg. Sparen zeigt im laufenden Monat den Stand von heute (Monatsbeginn), mit Hinweis. Details: `docs/AENDERUNGEN-3.5.md`.
+
+## Erledigt in 3.4 (9. Oktober 2026)
+
+- Sparen: zuerst Rücklagen (Gesamtstand, Aufteilungsbalken je Topf, Zeilen mit Betrag und Anteil), dann Ziele als Kacheln. Kein Verlauf, auf Wunsch des Nutzers bewusst einfach. Details: `docs/AENDERUNGEN-3.4.md`.
+
+## Erledigt in 3.3 (9. Oktober 2026)
+
+- Sparen neu: Kacheln statt Liste, ruhige Farben, kein Regler/Fahrplan. Ziele flexibel oder mit fester Rate, Einzahlen, „Was die Rate kostet“, Jahreskosten glätten. Schalter Hell/Dunkel. Details: `docs/AENDERUNGEN-3.3.md`.
+
+## Erledigt in 3.2.1 (9. Oktober 2026)
+
+- Löschen-Knopf im Editor, „Bestand anpassen“ als Hauptknopf, Bestand läuft fort (`docs/AENDERUNGEN-3.2.1.md`).
 
 ## Erledigt in 2.13 (8. Oktober 2026)
 
@@ -49,13 +92,12 @@ Die Bitte um dieses Übergabepaket ist keine neue Freigabe, diese Punkte sofort 
 
 ## Technische Punkte für den nächsten Review
 
-- CSS besteht aus einer gewachsenen Basis mit vielen Überschreibungen plus `refinement.css`. Konsolidierung kann sinnvoll sein, muss aber anhand tatsächlich gerenderter Ansichten erfolgen.
-- JavaScript ist stellenweise sehr dicht formatiert. Eine gezielte Formatierung könnte die Wartung verbessern; keinen vollständigen Rewrite daraus ableiten.
-- Der frühere getrennte Ausgabenrenderer und erweiterte Szenarien existieren weiter im Code. Nicht unbesehen löschen, bevor Aktionshandler/Export/alte Daten geprüft sind.
+- Seit 3.0 gibt es ein Stylesheet `app.css` mit Tokens; seit 3.1 ohne Regeln für entfernte Ansichten.
+- Seit 3.1 sind alte Renderer, Kaufprüfung, Zeitplan und Entscheidungsassistent gelöscht. `scenarios.js` bleibt für das Übernahmejournal; Schemadateien validieren Altdaten.
 - Ziele ohne Topf lassen sich in der Deckungsprognose nicht verlässlich terminieren. Diese Grenze ist sichtbar zu machen, nicht durch erfundene Prognosen zu ersetzen.
 - Viele Filter-/Diagrammwechsel rendern den Bereich neu. Scrollposition, Fokus und geöffnete Details auf dem echten Handy prüfen.
 - Automatisches Neuladen bei Updates wurde nicht als neuer vollständiger Update-Dialog umgesetzt. Identität und vorhandene Daten erhalten; PWA-Cache gezielt versionieren.
-- Monatsabschlussregeln in allen Bearbeitungswegen prüfen, insbesondere CSV-Import und historische Planänderungen. Es gibt bestehende Signatur-/Rücknahmeprüfungen; keine unbelegte Zusicherung, dass jeder Weg abgeschlossen gesperrt ist.
+- Monatsabschlüsse lassen sich nicht mehr anlegen. Für mit älteren Versionen abgeschlossene Monate zeigt „Monat“ „Wieder öffnen“.
 - Kein aktueller physischer Android-Test und keine vollständige visuelle Abnahme. Die synthetischen UI-Tests beweisen weder Layoutqualität noch Touch-Ergonomie.
 
 ## Akzeptanz für ein künftiges Umsetzungspaket
