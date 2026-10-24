@@ -23,11 +23,12 @@ export function createSavingsUI(ctx){
   const firstMonth=()=>M()<currentMonth()?currentMonth():M();
   const freeIn=(state,m)=>reconcileMonth(state,m).afterOpen;
   const close=()=>ctx.closeDialog();
-  // Ab 3.5: Im laufenden Monat zeigt Sparen den Stand von heute = Monatsanfang, weil die Sparraten erst mit dem
-  // Gehalt am Monatsende eingezahlt werden. „end“ bleibt der Stand nach allen Bewegungen des Monats.
-  const isNow=()=>M()===currentMonth();
-  const atNow=p=>p?{...p,end:p.balance,balance:isNow()?p.opening:p.balance}:p;
-  const whenLabel=()=>isNow()?'heute':'Ende '+monthName(M());
+  // Ab 3.5.2, in jedem Monat gleich: groß der Stand im Monat, klein der Stand am Monatsende.
+  // Stand im Monat = Monatsanfang + Einzahlungen zwischendurch (einmalig) − Entnahmen. Feste, wiederkehrende
+  // Sparraten zahlt der Nutzer mit dem Gehalt am Monatsende ein; sie zählen erst im Stand am Monatsende („end“).
+  const during=p=>p.opening+p.movements.reduce((n,i)=>n+(i.type==='income'?-i.monthlyAmount:i.frequency==='once'?i.monthlyAmount:0),0);
+  const atNow=p=>p?{...p,end:p.balance,balance:during(p)}:p;
+  const whenLabel=()=>'im '+monthName(M());
   // Welcher Dialog gerade offen ist (für die Live-Vorschau): kind = deposit | rate | goal, dazu Ziel bzw. Topf.
   let live={kind:'',goalId:'',potId:''};
   const field=(form,k)=>String(new FormData(form).get(k)||'');
@@ -53,7 +54,7 @@ export function createSavingsUI(ctx){
       else{kind='rate';line=whole(rate.amount)+' im Monat'+(rate.running?'':' ab '+short(rate.start))}
     }
     else{kind='flex';line=until&&need?'bis '+short(g.deadline):'flexibel'}
-    const bal=isNow()&&gp.pot?gp.pot.opening:gp.balance;
+    const bal=gp.pot?during(gp.pot):gp.balance;
     return {gp,rate,missing,kind,line,need,until,balance:bal,end:gp.balance,pct:g.price?bal/g.price*100:0};
   }
   function potInfo(p){
@@ -70,7 +71,7 @@ export function createSavingsUI(ctx){
     const i=goalInfo(g),bal=pot?pot.balance:0;
     // Zweite Zeile: bei fester Rate der Termin, bei flexibel mit Termin der nötige Monatsbetrag.
     const sub=i.kind==='rate'&&g.deadline?'bis '+short(g.deadline):i.kind==='flex'&&i.until&&i.need?whole(i.need)+' im Monat nötig':'';
-    return `<button class="tile" data-action="goal-open" data-id="${g.id}">${ring(i.pct,48,i.kind==='done')}<span class="tile-name">${esc(g.title)}</span><span class="tile-amount ${bal<0?'is-negative':''}">${whole(bal)}<small> von ${whole(g.price)}</small></span><span class="tile-line is-${i.kind}">${esc(i.line)}${sub?'<br><span>'+esc(sub)+'</span>':''}</span></button>`;
+    return `<button class="tile" data-action="goal-open" data-id="${g.id}">${ring(i.pct,48,i.kind==='done')}<span class="tile-name">${esc(g.title)}</span><span class="tile-amount ${bal<0?'is-negative':''}">${whole(bal)}<small> von ${whole(g.price)}</small></span>${pot&&pot.end!==bal?`<span class="tile-end">Ende ${esc(monthOnly(M()))}: ${whole(pot.end)}</span>`:''}<span class="tile-line is-${i.kind}">${esc(i.line)}${sub?'<br><span>'+esc(sub)+'</span>':''}</span></button>`;
   }
   // Rücklagen: Gesamtstand, Aufteilungsbalken (Teil vom Ganzen) und Zeilen. Farbe folgt dem Topf (Reihenfolge der Anlage),
   // nicht seiner Größe; ab dem siebten Topf gemeinsam „Weitere“ in Grau. Der Balken zeigt nur positive Bestände.
@@ -88,10 +89,11 @@ export function createSavingsUI(ctx){
     const bar=sum>0&&rest.length>1?`<div class="rbar" role="img" aria-label="Aufteilung: ${esc(segs.map(x=>x.label+' '+euro(x.v)).join(', '))}">${segs.map(x=>`<i style="--c:${x.c};flex-grow:${x.v}" title="${esc(x.label)}: ${euro(x.v)}"></i>`).join('')}</div>`:'';
     const row=p=>{
       const i=potInfo(p),share=sum>0&&p.balance>0?Math.round(p.balance/sum*100):0;
-      return `<li class="row"><span class="dot-mark" style="--c:${slot(p.id)}"></span><button class="row-main" data-action="savings-pot" data-id="${p.id}"><span class="row-title">${esc(p.name)}</span><span class="row-sub ${i.kind==='warn'?'is-warn':''}">${esc(i.line)}</span></button><span class="row-amount ${p.balance<0?'is-negative':''}">${euro(p.balance)}${rest.length>1?`<small>${share} %</small>`:''}</span></li>`;
+      return `<li class="row"><span class="dot-mark" style="--c:${slot(p.id)}"></span><button class="row-main" data-action="savings-pot" data-id="${p.id}"><span class="row-title">${esc(p.name)}</span><span class="row-sub ${i.kind==='warn'?'is-warn':''}">${esc(i.line)}${p.end!==undefined&&p.end!==p.balance?` · Ende ${esc(euro(p.end))}`:''}</span></button><span class="row-amount ${p.balance<0?'is-negative':''}">${euro(p.balance)}${rest.length>1?`<small>${share} %</small>`:''}</span></li>`;
     };
     const rows=[...rest].sort((a,b)=>b.balance-a.balance);
-    return {total,html:rest.length?`<div class="rcard"><p class="rcard-label">Insgesamt</p><p class="rcard-total ${total<0?'is-negative':''}">${money2(total)}</p>${bar}<ul class="rows rlist">${rows.map(row).join('')}</ul></div>`:''};
+    const endSum=rest.reduce((n,p)=>n+(p.end??p.balance),0);
+    return {total,html:rest.length?`<div class="rcard"><p class="rcard-label">Stand ${esc(whenLabel())}</p><p class="rcard-total ${total<0?'is-negative':''}">${money2(total)}</p><p class="rcard-end">Ende ${esc(monthName(M()))}: <b class="${endSum<0?'is-negative':''}">${euro(endSum)}</b>${endSum!==total?' · nach den festen Sparraten':''}</p>${bar}<ul class="rows rlist">${rows.map(row).join('')}</ul></div>`:''};
   }
   const addLine=(action,label)=>`<button class="add-line" data-action="${action}">${icon('plus')}${label}</button>`;
 
@@ -102,12 +104,12 @@ export function createSavingsUI(ctx){
     const unlinked=projected(S(),m).filter(i=>i.type==='saving'&&!i.potId);
     const empty=!goals.length&&!s.pots.length;
     const hint=cands.length?`<button class="sv-hint" data-action="sinking-open">${icon('calendar')}<span><b>Jahreskosten glätten</b><small>${cands.length===1?esc(cands[0].item.title)+' kostet':cands.length+' Zahlungen kosten'} ${whole(cands.reduce((n,c)=>n+Math.round(c.amount*12/c.interval),0))} im Jahr. Mit ${whole(cands.reduce((n,c)=>n+c.monthly,0))} im Monat trifft Dich kein Zahlungsmonat mehr unvorbereitet.</small></span>${icon('right')}</button>`:'';
-    const shownRest=rest.map(atNow),r=reserves(shownRest),inGoals=s.pots.filter(p=>goalPots.has(p.id)).reduce((n,p)=>n+atNow(p).balance,0),endTotal=rest.reduce((n,p)=>n+p.balance,0);
-    const nowNote=isNow()&&rest.length?`<p class="sv-info">${icon('info')}<span>„Heute“ ist der Stand zu Monatsbeginn: Deine Sparraten zahlst Du mit dem Gehalt am Monatsende ein.${endTotal!==r.total?` Ende ${esc(monthName(m))} sind es dann <b>${euro(endTotal)}</b>.`:''}</span></p>`:'';
+    const shownRest=rest.map(atNow),r=reserves(shownRest),inGoals=s.pots.filter(p=>goalPots.has(p.id)).reduce((n,p)=>n+atNow(p).balance,0);
+    const nowNote=rest.length||goals.length?`<p class="sv-info">${icon('info')}<span>Groß: Stand im Monat, mit allem, was Du zwischendurch einzahlst oder entnimmst. Klein: Stand am Monatsende, wenn die festen Sparraten mit dem Gehalt dazukommen.</span></p>`:'';
     const goalsHTML=`<section class="sv-group sv-goals"><header class="group-head"><h2>Ziele</h2>${goals.length?`<span>${whole(goals.reduce((n,g)=>n+g.price,0))}</span>`:''}</header><div class="tiles">${goals.map(g=>goalTile(g,atNow(s.pots.find(p=>p.id===g.potId)))).join('')}</div>${addLine('goal-new','Neues Ziel')}</section>`;
     return `${unlinked.length?`<div class="notice"><span>${euro(unlinked.reduce((n,i)=>n+i.monthlyAmount,0))} Sparen ohne Topf: im Budget reserviert, aber keinem Topf zugeordnet.</span><button class="textbtn" data-action="pot-link">Zuordnen</button></div>`:''}
 ${empty?'<p class="sv-intro">Eine Rücklage ist Geld mit Zweck, etwa ein Notgroschen. Ein Ziel ist etwas, das Du Dir leisten willst. Du sparst mit fester Monatsrate oder zahlst ein, wann es passt.</p>':''}
-<section class="sv-group sv-reserves"><header class="group-head"><h2>Rücklagen · ${esc(whenLabel())}</h2></header>${r.html}${nowNote}${addLine('pot-new','Neue Rücklage')}${hint}</section>
+<section class="sv-group sv-reserves"><header class="group-head"><h2>Rücklagen</h2></header>${r.html}${nowNote}${addLine('pot-new','Neue Rücklage')}${hint}</section>
 ${goalsHTML}
 <p class="sv-foot">${inGoals?`In Zielen ${esc(whenLabel())}: ${euro(inGoals)} · `:''}${t.saving?`${euro(t.saving)} gehen im ${esc(monthOnly(m))} in Töpfe · `:''}${euro(free)} im ${esc(monthOnly(m))} frei</p>
 ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.length}</span></summary><ul class="rows">${done.map(g=>`<li class="row is-plain"><button class="row-main" data-action="goal-edit" data-id="${g.id}"><span class="row-title">${esc(g.title)}</span><span class="row-sub">${euro(g.price)}</span></button><button class="textbtn" data-action="goal-reopen" data-id="${g.id}">Wieder öffnen</button></li>`).join('')}</ul></details>`:''}`;
@@ -135,7 +137,7 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
       lines.push(`Im ${esc(monthOnly(m))} sind noch <b class="${free<0?'is-negative':''}">${euro(free)}</b> frei${i.rate?.running?', die Rate ist schon abgezogen':''}.`);
     }
     const actionsHTML=i.kind==='done'?`<div class="sheet-actions"><button class="btn btn-primary" data-action="goal-done" data-id="${g.id}">${icon('check')}Ziel abschließen</button></div>`:`<div class="sheet-actions"><button class="btn btn-primary" data-action="sv-deposit" data-goal="${g.id}">${icon('plus')}Einzahlen</button><button class="btn btn-outline" data-action="sv-rate" data-goal="${g.id}">${icon('repeat')}${i.rate?'Rate ändern':'Feste Rate'}</button></div>`;
-    ctx.openDialog(esc(g.title),`<div class="sheet-body"><div class="sv-top">${ring(i.pct,84,i.kind==='done')}<div><p class="sv-big">${euro(i.balance)}</p><p class="sv-of">${isNow()?'heute · ':''}von ${euro(g.price)}${g.deadline?' · bis '+esc(short(g.deadline)):''}</p>${isNow()&&i.end!==i.balance?`<p class="sv-of">Ende ${esc(monthOnly(m))}: ${euro(i.end)}</p>`:''}${g.price-i.balance>0?`<p class="sv-missing">Es fehlen ${euro(g.price-i.balance)}</p>`:''}</div></div><div class="sv-text">${lines.map(l=>`<p>${l}</p>`).join('')}</div>${actionsHTML}<div class="sheet-links"><button class="textbtn" data-action="sv-correct" data-goal="${g.id}">Bestand anpassen</button><button class="textbtn" data-action="goal-edit" data-id="${g.id}">Bearbeiten</button>${i.kind!=='done'?`<button class="textbtn" data-action="goal-done" data-id="${g.id}">Ziel abschließen</button>`:''}</div>${g.potId?history(g.potId):''}</div>`);
+    ctx.openDialog(esc(g.title),`<div class="sheet-body"><div class="sv-top">${ring(i.pct,84,i.kind==='done')}<div><p class="sv-big">${euro(i.balance)}</p><p class="sv-of">${esc(whenLabel())} · von ${euro(g.price)}${g.deadline?' · bis '+esc(short(g.deadline)):''}</p><p class="sv-of">Ende ${esc(monthOnly(m))}: ${euro(i.end)}</p>${g.price-i.balance>0?`<p class="sv-missing">Es fehlen ${euro(g.price-i.balance)}</p>`:''}</div></div><div class="sv-text">${lines.map(l=>`<p>${l}</p>`).join('')}</div>${actionsHTML}<div class="sheet-links"><button class="textbtn" data-action="sv-correct" data-goal="${g.id}">Bestand anpassen</button><button class="textbtn" data-action="goal-edit" data-id="${g.id}">Bearbeiten</button>${i.kind!=='done'?`<button class="textbtn" data-action="goal-done" data-id="${g.id}">Ziel abschließen</button>`:''}</div>${g.potId?history(g.potId):''}</div>`);
   }
   function potSheet(id){
     const g=goalOfPot(id);
@@ -149,7 +151,7 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
     }
     if(i.rate)lines.push(rateLine(i.rate));
     else if(!i.sink)lines.push(p.checkpoint?'Keine feste Rate. Zahle ein, wann es passt.':`Startet im ${esc(monthName(p.checkpoints[0].month))}.`);
-    ctx.openDialog(esc(p.name),`<div class="sheet-body"><div class="sv-top">${i.target?ring(i.pct,84):badge(i.sink?'calendar':'jar',84)}<div><p class="sv-big ${p.balance<0?'is-negative':''}">${euro(p.balance)}</p><p class="sv-of">${isNow()?`heute${p.end!==p.balance?` · Ende ${esc(monthOnly(m))}: ${euro(p.end)}`:''}`:'Ende '+esc(monthName(m))}</p></div></div><div class="sv-text">${lines.map(l=>`<p>${l}</p>`).join('')}</div><div class="sheet-actions"><button class="btn btn-primary" data-action="sv-deposit" data-pot="${id}">${icon('plus')}Einzahlen</button><button class="btn btn-outline" data-action="sv-rate" data-pot="${id}">${icon('repeat')}${i.rate?'Rate ändern':'Feste Rate'}</button></div><div class="sheet-links"><button class="textbtn" data-action="pot-correct" data-id="${id}">Bestand anpassen</button><button class="textbtn" data-action="pot-withdraw" data-id="${id}">Entnahme einplanen</button><button class="textbtn" data-action="pot-edit" data-id="${id}">Bearbeiten</button>${i.sink?'':`<button class="textbtn" data-action="goal-new" data-pot="${id}">Ziel setzen</button>`}</div>${history(id)}</div>`);
+    ctx.openDialog(esc(p.name),`<div class="sheet-body"><div class="sv-top">${i.target?ring(i.pct,84):badge(i.sink?'calendar':'jar',84)}<div><p class="sv-big ${p.balance<0?'is-negative':''}">${euro(p.balance)}</p><p class="sv-of">${esc(whenLabel())}</p><p class="sv-of">Ende ${esc(monthOnly(m))}: ${euro(p.end)}</p></div></div><div class="sv-text">${lines.map(l=>`<p>${l}</p>`).join('')}</div><div class="sheet-actions"><button class="btn btn-primary" data-action="sv-deposit" data-pot="${id}">${icon('plus')}Einzahlen</button><button class="btn btn-outline" data-action="sv-rate" data-pot="${id}">${icon('repeat')}${i.rate?'Rate ändern':'Feste Rate'}</button></div><div class="sheet-links"><button class="textbtn" data-action="pot-correct" data-id="${id}">Bestand anpassen</button><button class="textbtn" data-action="pot-withdraw" data-id="${id}">Entnahme einplanen</button><button class="textbtn" data-action="pot-edit" data-id="${id}">Bearbeiten</button>${i.sink?'':`<button class="textbtn" data-action="goal-new" data-pot="${id}">Ziel setzen</button>`}</div>${history(id)}</div>`);
   }
 
   // ---- Dialoge: Einzahlen, Rate, neues Ziel ----

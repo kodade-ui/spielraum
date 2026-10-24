@@ -4,7 +4,7 @@
 
 Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Prioritäten: (1) größere Anschaffungen durchspielen, (2) weniger manuelle Arbeit, (3) Wünsche zeitlich miteinander vereinbaren. Keine zweite Bankbuchhaltung, keine erneute Analyse-Hauptnavigation. Datenerhalt hat Vorrang vor einem technisch bequemen Neubau.
 
-## Tatsächlich vorhanden (3.5.1)
+## Tatsächlich vorhanden (3.5.2)
 
 - Drei Bereiche: Monat, Sparen, Jahr; Plus-Taste für die Schnellerfassung.
 - Sofortige Monatsprojektion, erweiterbare Kategorien, monatliche/vierteljährliche/jährliche/einmalige Posten.
@@ -40,6 +40,10 @@ Ein hochwertiger, einfacher persönlicher Planer auf dem Android-Handy. Priorit�
 Vorgeschlagen, aber nicht beauftragt: „Monat aussetzen“ bei fester Rate (Termin rutscht einen Monat), Kontostand-Abgleich (vom Nutzer zurückgestellt), Geldfluss-Diagramm, Favoriten in der Schnellerfassung, Backup per Teilen, automatisches Abhaken am Zahlungstag, Suche über Käufe. Hosting gelöst: GitHub Pages mit automatischer Veröffentlichung nach Merge.
 
 Offen aus 3.2.1: gemeldete Einzahlung im Oktober trotz Start im Dezember, mit Testdaten nicht nachstellbar.
+
+## Erledigt in 3.5.2 (24. Oktober 2026)
+
+- Sparen: in jedem Monat Stand im Monat (groß) und am Monatsende (klein); Einzahlungen zählen sofort. Details: `docs/AENDERUNGEN-3.5.2.md`.
 
 ## Erledigt in 3.5.1 (24. Oktober 2026)
 

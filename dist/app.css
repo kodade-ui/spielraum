@@ -327,6 +327,9 @@ dialog.modal[open]{position:fixed;inset:auto 0 0 0}
 .rcard-label{font-size:14px;font-weight:550;color:var(--muted)}
 .rcard-total{font-size:40px;line-height:1.1;font-weight:760;letter-spacing:-.03em;margin-top:2px}
 .rcard-total small{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.rcard-end{font-size:14px;color:var(--muted);margin-top:4px}
+.rcard-end b{color:var(--ink);font-weight:650}
+.tile-end{font-size:12.5px;color:var(--muted)}
 .rbar{display:flex;gap:2px;height:14px;margin:16px 0 6px;border-radius:4px;overflow:hidden}
 .rbar i{display:block;min-width:4px;background:var(--c)}
 .rlist{padding:0;box-shadow:none;background:none;margin-top:4px}
