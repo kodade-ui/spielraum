@@ -37,11 +37,12 @@ export function createMonthUI(ctx){
     return `<section class="hero" aria-label="Monatsübersicht"><p class="hero-label">${esc(label)}</p><p class="hero-value ${free<0?'is-negative':''}">${free<0?'−':''}${money2(Math.abs(free))}</p><p class="hero-sub ${free<0?'is-negative':''}">${esc(sub)}</p>${cashNow}${empty?'':flow(r)}${delta}</section>`;
   }
 
-  const cash=r=>r.availableIncome-r.actualTotal;
-  // Rechenweg: Kontostand (geschätzt) minus noch gebundenes Geld = Noch frei. Sparen zählt erst am Monatsende.
+  // Sparraten gehen beim Nutzer sofort mit dem Gehalt weg und stehen nie im Monatsbudget (ab 3.5.1).
+  const cash=r=>r.availableIncome-r.plannedSaving-r.actualTotal;
+  // Rechenweg: Einnahmen − Sparen − Erfasstes = Kontostand (geschätzt); minus offene Rechnungen und Rest in Budgets = Noch frei.
   function cashSheet(){
     const m=M(),r=reconcileMonth(S(),m),c=cash(r),line=(label,value,cls='')=>`<li class="${cls}"><span>${label}</span><b>${value}</b></li>`;
-    ctx.openDialog('Auf dem Konto, geschätzt',`<div class="sheet-body"><ul class="cash-table">${line('Einnahmen im '+esc(monthName(m))+(r.reserveWithdrawals?` <small>davon ${euro(r.reserveWithdrawals)} aus Töpfen</small>`:''),'+'+euro(r.availableIncome))}${line('Schon bezahlt und ausgegeben','−'+euro(r.actualTotal))}${line('Auf dem Konto, geschätzt',euro(c),'is-sum'+(c<0?' is-negative':''))}<li class="cash-sub">Davon noch gebunden</li>${line('Offene Rechnungen','−'+euro(r.fixedOpen))}${line('Rest in Budgets','−'+euro(r.variableOpen))}${line('Sparen am Monatsende','−'+euro(r.plannedSaving))}${line('Noch frei',euro(r.afterOpen),'is-sum'+(r.afterOpen<0?' is-negative':''))}</ul><p class="helper spaced">Kein echter Kontostand, sondern gerechnet: Einnahmen des Monats minus allem, was Du als bezahlt abgehakt oder als Kauf erfasst hast. Was Du nicht einträgst, fehlt hier. Sparraten zählen erst am Monatsende, weil Du sie mit dem Gehalt einzahlst. Vergleiche ab und zu mit Deinem echten Konto.</p></div>`);
+    ctx.openDialog('Auf dem Konto, geschätzt',`<div class="sheet-body"><ul class="cash-table">${line('Einnahmen im '+esc(monthName(m))+(r.reserveWithdrawals?` <small>davon ${euro(r.reserveWithdrawals)} aus Töpfen</small>`:''),'+'+euro(r.availableIncome))}${line('Sparen, gleich mit dem Gehalt','−'+euro(r.plannedSaving))}${line('Schon bezahlt und ausgegeben','−'+euro(r.actualTotal))}${line('Auf dem Konto, geschätzt',euro(c),'is-sum'+(c<0?' is-negative':''))}<li class="cash-sub">Davon noch gebunden</li>${line('Offene Rechnungen','−'+euro(r.fixedOpen))}${line('Rest in Budgets','−'+euro(r.variableOpen))}${line('Noch frei',euro(r.afterOpen),'is-sum'+(r.afterOpen<0?' is-negative':''))}</ul><p class="helper spaced">Kein echter Kontostand, sondern gerechnet: Einnahmen des Monats minus Sparraten (die gehen gleich mit dem Gehalt weg) minus allem, was Du als bezahlt abgehakt oder als Kauf erfasst hast. Was Du nicht einträgst, fehlt hier. Vergleiche ab und zu mit Deinem echten Konto.</p></div>`);
   }
 
   function flow(r){

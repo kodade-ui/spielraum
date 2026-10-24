@@ -1,4 +1,4 @@
-const CACHE = 'spielraum-shell-v3-7';
+const CACHE = 'spielraum-shell-v3-8';
 const ASSETS = ['./app.css', './planner-ui.js', './month-ui.js', './savings-ui.js', './year-ui.js', './sinking.js', './planner.js', './legacy.js', './intelligence.js', './reserves.js', './reserves-ui.js', './actuals.js', './actuals-ui.js', './goals.js', './goals-ui.js', './reconciliation.js', './reconciliation-ui.js', './plan-payments-ui.js', './budget-insights.js', './planning-schema.js', './scenarios.js', './scenarios-schema.js', './theme.js', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './apple-touch-icon.png', './icon-shortcut-192.png'];
 self.addEventListener('install', event => event.waitUntil((async () => {
   const cache = await caches.open(CACHE);

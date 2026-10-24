@@ -1,5 +1,5 @@
-# Prüft jeden Pull Request (Tests + Check) und veröffentlicht dist/ nach dem Merge auf main zusätzlich auf GitHub Pages.
-# Die App, die Lars benutzt, liegt auf Cloudflare (siehe wrangler.jsonc); GitHub Pages ist eine zweite Adresse mit eigenem, leerem Datenbereich.
+# Prüft jeden Pull Request (Tests + Check) und veröffentlicht dist/ nach dem Merge auf main auf GitHub Pages.
+# Das ist die App, die tatsächlich benutzt wird (https://kodade-ui.github.io/spielraum/).
 name: Tests und Veröffentlichung
 
 on:
