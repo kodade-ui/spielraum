@@ -224,6 +224,17 @@ dialog.modal[open]{position:fixed;inset:auto 0 0 0}
 .flow-legend .flow-total{grid-column:1/-1;font-size:12.5px;color:var(--faint)}
 .flow-legend .is-negative,.flow-legend .is-negative b{color:var(--negative)}
 @media (max-width:370px){.flow-legend{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hero-cash{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;padding:10px 14px;border-radius:var(--radius-s);background:var(--surface);border:1px solid var(--line);text-align:left;font-size:14.5px}
+.hero-cash span{flex:1;color:var(--muted)}
+.hero-cash b{font-size:17px;font-weight:700}
+.hero-cash .icon{width:18px;height:18px;color:var(--faint)}
+.cash-table{list-style:none;margin:0;padding:6px 16px;border-radius:var(--radius-s);background:var(--surface-2)}
+.cash-table li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;font-size:15px}
+.cash-table li b{font-weight:600;white-space:nowrap}
+.cash-table li small{display:block;font-size:12.5px;color:var(--muted)}
+.cash-table .is-sum{border-top:1px solid var(--line);font-weight:700}
+.cash-table .is-sum b{font-weight:750;font-size:16px}
+.cash-table .cash-sub{padding-top:14px;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .hero-change{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:14px;color:var(--muted);min-height:36px}
 .hero-change span{color:var(--primary);font-weight:650}
 .group{margin-top:26px}
@@ -324,6 +335,9 @@ dialog.modal[open]{position:fixed;inset:auto 0 0 0}
 .sv-reserves .sv-hint{margin-top:10px}
 .sv-goals{margin-top:30px}
 .sv-foot{margin:22px 4px 0;font-size:13.5px;color:var(--muted);line-height:1.5}
+.sv-info{display:flex;gap:8px;align-items:flex-start;margin:10px 4px 0;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.sv-info .icon{flex:none;width:16px;height:16px;margin-top:2px}
+.sv-info b{color:var(--ink);font-weight:650}
 /* Fortschrittsring */
 .ring{position:relative;flex:none;display:grid;place-items:center;width:var(--size);height:var(--size);color:var(--ink)}
 .ring-svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}

@@ -59,7 +59,7 @@ const restorePots=storage.get(KEY);await get('#import-file').change({target:{fil
 console.log('PASS: reserves update keeps original data and backup; pot creation, deposit, withdrawal, correction and undo reconcile; linked-pot deletion blocked; restore retains balances.');
 // Cashflow edition: the actual UI event path, persistence, and separation from planning.
 await click({view:'plan'});await click({action:'new-expense'});input({title:'Zukunftsreise',amount:'300',potId:'__new','new-pot-name':'Fernreise',paymentDay:'31'});assert.match(get('#live-projection').innerHTML,/Rücklage für Fernreise/);assert.match(get('#live-projection').innerHTML,/300,00/);submit();const newPot=state().pots.find(p=>p.name==='Fernreise'),contribution=state().items.find(i=>i.title==='Zukunftsreise');assert.ok(newPot);assert.equal(contribution.type,'saving');assert.equal(contribution.potId,newPot.id);assert.equal(contribution.paymentDay,31);
-await click({view:'savings'});assert.match(page(),/Rücklagen · Ende/);assert.match(page(),/Fernreise/);assert.match(page(),/\+300\s€ im Monat/);assert.doesNotMatch(page(),/Abbuchungen & Entnahmen/);assert.ok(!page().includes('reserve-donut'));
+await click({view:'savings'});assert.match(page(),/Rücklagen · (Ende|heute)/);assert.match(page(),/Fernreise/);assert.match(page(),/\+300\s€ im Monat/);assert.doesNotMatch(page(),/Abbuchungen & Entnahmen/);assert.ok(!page().includes('reserve-donut'));
 const planBefore=totals(state(),currentMonth()),reserveBefore=reserveSummary(state(),currentMonth());await click({view:'plan'});assert.match(page(),/Noch frei im/);await click({action:'actual-new'});submit({title:'Supermarkt',amount:'45,67',date:currentMonth()+'-12',category:'c1'});assert.equal(state().actualExpenses.length,1);assert.equal(state().actualExpenses[0].amount,4567);assert.match(page(),/45,67/);assert.match(page(),/Lebensmittel/);assert.deepEqual(totals(state(),currentMonth()),planBefore);assert.deepEqual(reserveSummary(state(),currentMonth()),reserveBefore);
 const purchase=state().actualExpenses[0];await click({action:'actual-edit',id:purchase.id});submit({amount:'50'});assert.equal(state().actualExpenses[0].amount,5000);assert.match(page(),/50,00/);assert.match(page(),/Ohne Budget/);await click({action:'actual-delete',id:purchase.id});assert.equal(state().actualExpenses.length,0);await click({action:'undo'});assert.equal(state().actualExpenses.length,1);
 await click({action:'actual-new'});submit({title:'Blumen',amount:'12',date:currentMonth()+'-14',category:'__new',newCategory:'Mein Garten'});assert.ok(state().categories.find(c=>c.name==='Mein Garten'));assert.equal(state().actualExpenses.length,2);await click({action:'delete-category',id:state().categories.find(c=>c.name==='Mein Garten').id});assert.match(get('#form-error').textContent,/noch von Posten verwendet/);
@@ -167,4 +167,18 @@ await click({view:'savings'});const pot=state().pots.find(p=>p.name==='Notgrosch
 const sheet=get('#dialog').innerHTML;assert.match(sheet,/data-action="(pot-correct|sv-correct)"/);assert.match(sheet,/data-action="sv-deposit"/);await click({action:'close'});
 }
 console.log('PASS: delete button in the item editor with undo; pot sheet offers adjusting the balance and deposits.');
+// 3.5: geschätzter Kontostand im laufenden Monat; Sparen zeigt im laufenden Monat den Stand von heute (Monatsbeginn).
+{
+const {reconcileMonth}=await import('../dist/reconciliation.js');const {reserveSummary:rs}=await import('../dist/reserves.js');
+await click({action:'year-open',month:currentMonth()});assert.match(page(),/Auf dem Konto, geschätzt/);
+const r=reconcileMonth(state(),currentMonth()),cash=r.availableIncome-r.actualTotal;
+assert.equal(cash-r.fixedOpen-r.variableOpen-r.plannedSaving,r.afterOpen,'Rechenweg geht auf');
+await click({action:'month-cash'});const sheet=get('#dialog').innerHTML;assert.match(sheet,/Schon bezahlt und ausgegeben/);assert.match(sheet,/Sparen am Monatsende/);assert.ok(sheet.includes(new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(cash/100)));await click({action:'close'});
+await click({action:'next'});assert.doesNotMatch(page(),/Auf dem Konto, geschätzt/);await click({action:'prev'});
+await click({view:'savings'});assert.match(page(),/Rücklagen · heute/);const pot=state().pots.find(p=>p.name==='Urlaub');
+assert.match(page(),/sv-info/);assert.ok(page().includes('data-id="'+pot.id+'"'));
+await click({action:'savings-pot',id:pot.id});assert.match(get('#dialog').innerHTML,/heute/);await click({action:'close'});
+await click({action:'next'});assert.match(page(),/Rücklagen · Ende/);assert.doesNotMatch(page(),/sv-info/);await click({action:'prev'});
+}
+console.log('PASS: estimated account balance with breakdown (current month only), savings show today = start of month with end-of-month note.');
 process.exit(0);
