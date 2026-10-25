@@ -29,7 +29,10 @@ export function createSavingsUI(ctx){
   // Stand am Monatsende (klein) = zusätzlich die festen Raten des Folgemonats, die mit dem nächsten Gehalt kommen.
   const nextRates=id=>projected(S(),shiftMonth(M(),1)).filter(i=>i.potId===id&&i.type==='saving'&&i.frequency!=='once').reduce((n,i)=>n+i.monthlyAmount,0);
   const atNow=p=>p?{...p,end:p.balance+nextRates(p.id)}:p;
-  const whenLabel=()=>'im '+monthName(M());
+  // „Anfang M“ = nach dem Gehalt Ende Vormonat (mit den Raten des Planmonats M) plus Einzahlungen zwischendurch;
+  // „Ende M“ = nach dem Gehalt Ende M (mit den Raten des Planmonats M+1).
+  const whenLabel=()=>'Anfang '+monthName(M());
+  const endLabel=()=>'Ende '+monthName(M());
   // Welcher Dialog gerade offen ist (für die Live-Vorschau): kind = deposit | rate | goal, dazu Ziel bzw. Topf.
   let live={kind:'',goalId:'',potId:''};
   const field=(form,k)=>String(new FormData(form).get(k)||'');
@@ -72,7 +75,7 @@ export function createSavingsUI(ctx){
     const i=goalInfo(g),bal=pot?pot.balance:0;
     // Zweite Zeile: bei fester Rate der Termin, bei flexibel mit Termin der nötige Monatsbetrag.
     const sub=i.kind==='rate'&&g.deadline?'bis '+short(g.deadline):i.kind==='flex'&&i.until&&i.need?whole(i.need)+' im Monat nötig':'';
-    return `<button class="tile" data-action="goal-open" data-id="${g.id}">${ring(i.pct,48,i.kind==='done')}<span class="tile-name">${esc(g.title)}</span><span class="tile-amount ${bal<0?'is-negative':''}">${whole(bal)}<small> von ${whole(g.price)}</small></span>${pot&&pot.end!==bal?`<span class="tile-end">Ende ${esc(monthOnly(M()))}: ${whole(pot.end)}</span>`:''}<span class="tile-line is-${i.kind}">${esc(i.line)}${sub?'<br><span>'+esc(sub)+'</span>':''}</span></button>`;
+    return `<button class="tile" data-action="goal-open" data-id="${g.id}">${ring(i.pct,48,i.kind==='done')}<span class="tile-name">${esc(g.title)}</span><span class="tile-amount ${bal<0?'is-negative':''}">${whole(bal)}<small> von ${whole(g.price)}</small></span>${pot?`<span class="tile-end">Ende ${esc(monthOnly(M()))}: ${whole(pot.end)}</span>`:''}<span class="tile-line is-${i.kind}">${esc(i.line)}${sub?'<br><span>'+esc(sub)+'</span>':''}</span></button>`;
   }
   // Rücklagen: Gesamtstand, Aufteilungsbalken (Teil vom Ganzen) und Zeilen. Farbe folgt dem Topf (Reihenfolge der Anlage),
   // nicht seiner Größe; ab dem siebten Topf gemeinsam „Weitere“ in Grau. Der Balken zeigt nur positive Bestände.
@@ -90,11 +93,11 @@ export function createSavingsUI(ctx){
     const bar=sum>0&&rest.length>1?`<div class="rbar" role="img" aria-label="Aufteilung: ${esc(segs.map(x=>x.label+' '+euro(x.v)).join(', '))}">${segs.map(x=>`<i style="--c:${x.c};flex-grow:${x.v}" title="${esc(x.label)}: ${euro(x.v)}"></i>`).join('')}</div>`:'';
     const row=p=>{
       const i=potInfo(p),share=sum>0&&p.balance>0?Math.round(p.balance/sum*100):0;
-      return `<li class="row"><span class="dot-mark" style="--c:${slot(p.id)}"></span><button class="row-main" data-action="savings-pot" data-id="${p.id}"><span class="row-title">${esc(p.name)}</span><span class="row-sub ${i.kind==='warn'?'is-warn':''}">${esc(i.line)}${p.end!==undefined&&p.end!==p.balance?` · Ende ${esc(euro(p.end))}`:''}</span></button><span class="row-amount ${p.balance<0?'is-negative':''}">${euro(p.balance)}${rest.length>1?`<small>${share} %</small>`:''}</span></li>`;
+      return `<li class="row"><span class="dot-mark" style="--c:${slot(p.id)}"></span><button class="row-main" data-action="savings-pot" data-id="${p.id}"><span class="row-title">${esc(p.name)}</span><span class="row-sub ${i.kind==='warn'?'is-warn':''}">${esc(i.line)}${rest.length>1?` · ${share} %`:''}</span></button><span class="row-amount ${p.balance<0?'is-negative':''}">${euro(p.balance)}<small>Ende ${euro(p.end??p.balance)}</small></span></li>`;
     };
     const rows=[...rest].sort((a,b)=>b.balance-a.balance);
     const endSum=rest.reduce((n,p)=>n+(p.end??p.balance),0);
-    return {total,html:rest.length?`<div class="rcard"><p class="rcard-label">Stand ${esc(whenLabel())}</p><p class="rcard-total ${total<0?'is-negative':''}">${money2(total)}</p><p class="rcard-end">Ende ${esc(monthName(M()))}: <b class="${endSum<0?'is-negative':''}">${euro(endSum)}</b>${endSum!==total?' · nach den festen Sparraten':''}</p>${bar}<ul class="rows rlist">${rows.map(row).join('')}</ul></div>`:''};
+    return {total,html:rest.length?`<div class="rcard"><p class="rcard-label">${esc(whenLabel())}</p><p class="rcard-total ${total<0?'is-negative':''}">${money2(total)}</p><p class="rcard-end">${esc(endLabel())}: <b class="${endSum<0?'is-negative':''}">${euro(endSum)}</b></p>${bar}<ul class="rows rlist">${rows.map(row).join('')}</ul></div>`:''};
   }
   const addLine=(action,label)=>`<button class="add-line" data-action="${action}">${icon('plus')}${label}</button>`;
 
@@ -106,7 +109,7 @@ export function createSavingsUI(ctx){
     const empty=!goals.length&&!s.pots.length;
     const hint=cands.length?`<button class="sv-hint" data-action="sinking-open">${icon('calendar')}<span><b>Jahreskosten glätten</b><small>${cands.length===1?esc(cands[0].item.title)+' kostet':cands.length+' Zahlungen kosten'} ${whole(cands.reduce((n,c)=>n+Math.round(c.amount*12/c.interval),0))} im Jahr. Mit ${whole(cands.reduce((n,c)=>n+c.monthly,0))} im Monat trifft Dich kein Zahlungsmonat mehr unvorbereitet.</small></span>${icon('right')}</button>`:'';
     const shownRest=rest.map(atNow),r=reserves(shownRest),inGoals=s.pots.filter(p=>goalPots.has(p.id)).reduce((n,p)=>n+atNow(p).balance,0);
-    const nowNote=rest.length||goals.length?`<p class="sv-info">${icon('info')}<span>Groß: Stand im Monat. Die Sparraten dieses Monats sind schon drin (sie kommen mit dem Gehalt Ende Vormonat), ebenso alles, was Du zwischendurch ein- oder auszahlst. Klein: dazu die Raten, die mit dem nächsten Gehalt kommen.</span></p>`:'';
+    const nowNote=rest.length||goals.length?`<p class="sv-info">${icon('info')}<span>${esc(whenLabel())}: nach dem Gehalt Ende ${esc(monthOnly(shiftMonth(m,-1)))}, also mit den Raten, die im ${esc(monthOnly(m))} eingetragen sind, dazu Ein- und Auszahlungen zwischendurch. ${esc(endLabel())}: nach dem Gehalt Ende ${esc(monthOnly(m))}, also mit den Raten, die im ${esc(monthOnly(shiftMonth(m,1)))} eingetragen sind.</span></p>`:'';
     const goalsHTML=`<section class="sv-group sv-goals"><header class="group-head"><h2>Ziele</h2>${goals.length?`<span>${whole(goals.reduce((n,g)=>n+g.price,0))}</span>`:''}</header><div class="tiles">${goals.map(g=>goalTile(g,atNow(s.pots.find(p=>p.id===g.potId)))).join('')}</div>${addLine('goal-new','Neues Ziel')}</section>`;
     return `${unlinked.length?`<div class="notice"><span>${euro(unlinked.reduce((n,i)=>n+i.monthlyAmount,0))} Sparen ohne Topf: im Budget reserviert, aber keinem Topf zugeordnet.</span><button class="textbtn" data-action="pot-link">Zuordnen</button></div>`:''}
 ${empty?'<p class="sv-intro">Eine Rücklage ist Geld mit Zweck, etwa ein Notgroschen. Ein Ziel ist etwas, das Du Dir leisten willst. Du sparst mit fester Monatsrate oder zahlst ein, wann es passt.</p>':''}
