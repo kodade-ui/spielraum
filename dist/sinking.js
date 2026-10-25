@@ -41,7 +41,7 @@ export function sinkingCandidates(state,month){
 export function sinkingOptions(c,month,saved=0){
   const k=monthsBetween(month,c.next)+1,enough=saved+k*c.monthly>=c.amount;
   // Ist die Zahlung schon in diesem Monat fällig, bringt eine Rate bis dahin nichts: dann nur „later“.
-  return {months:k,regular:c.monthly,catchUp:enough?0:euroUp(Math.ceil(Math.max(0,c.amount-saved)/k)),onlyLater:!enough&&k===1,laterStart:shiftMonth(c.next,1),firstLater:shiftMonth(c.next,c.interval)};
+  return {months:k,regular:c.monthly,catchUp:enough?0:k>0?euroUp(Math.ceil(Math.max(0,c.amount-saved)/k)):c.amount,onlyLater:!enough&&k<=1,laterStart:shiftMonth(c.next,1),firstLater:shiftMonth(c.next,c.interval)};
 }
 
 export function applySinking(state,c,month,{mode='now',saved=0}={}){

@@ -1,8 +1,8 @@
 # Spielraum an Claude übergeben
 
-Stand: 9. Oktober 2026 · App-Version 3.5.2 (Übergabe von GPT: 2.12, 6. Oktober 2026) · Deutsch · Android-PWA · https://kodade-ui.github.io/spielraum/
+Stand: 9. Oktober 2026 · App-Version 3.5.3 (Übergabe von GPT: 2.12, 6. Oktober 2026) · Deutsch · Android-PWA · https://kodade-ui.github.io/spielraum/
 
-Änderungen seit der Übergabe: `docs/AENDERUNGEN-2.13.md`, `docs/AENDERUNGEN-3.0.md`, `docs/AENDERUNGEN-3.1.md`, `docs/AENDERUNGEN-3.2.md`, `docs/AENDERUNGEN-3.2.1.md`, `docs/AENDERUNGEN-3.3.md`, `docs/AENDERUNGEN-3.4.md`, `docs/AENDERUNGEN-3.5.md`, `docs/AENDERUNGEN-3.5.1.md`, `docs/AENDERUNGEN-3.5.2.md`.
+Änderungen seit der Übergabe: `docs/AENDERUNGEN-2.13.md`, `docs/AENDERUNGEN-3.0.md`, `docs/AENDERUNGEN-3.1.md`, `docs/AENDERUNGEN-3.2.md`, `docs/AENDERUNGEN-3.2.1.md`, `docs/AENDERUNGEN-3.3.md`, `docs/AENDERUNGEN-3.4.md`, `docs/AENDERUNGEN-3.5.md`, `docs/AENDERUNGEN-3.5.1.md`, `docs/AENDERUNGEN-3.5.2.md`, `docs/AENDERUNGEN-3.5.3.md`.
 
 Dieses Paket enthält die vollständige statische App, ihre Tests, vorhandene Icons und eine Übergabe. Deine persönlichen Eingaben sind nicht enthalten. Die bestehende App wurde für den Export nicht verändert.
 
