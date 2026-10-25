@@ -11,7 +11,8 @@ test('Every planned expense counts immediately, independent of day; charts and f
   assert.equal(distribution(s,'2026-09').find(d=>d.id==='c7').value,95000);
   assert.equal(forecast(s,'2026-09',6)[5].remaining,185000);
   s=upsertItem(s,item('Sparen',30000,'saving'),null,'2026-09');
-  assert.equal(totals(s,'2026-09').remaining,155000);
+  assert.equal(totals(s,'2026-09').remaining,185000,'Sparrate Ende September belastet erst den Oktober');
+  assert.equal(totals(s,'2026-10').saving,30000);
   assert.equal(distribution(s,'2026-09').find(d=>d.id==='saving_c7').value,30000);
 });
 test('Annual amounts are monthly provisions; one-off costs only count in their month',()=>{

@@ -27,6 +27,6 @@ test('Quarterly pot deposits accrue only in payment months and annual provisions
 test('Reconciliation starts with income separately from pot withdrawals and combines recorded, reserved and open amounts',()=>{
  let s=createPot(enhanceState(blank()),{name:'Urlaub',balance:100000,month:'2026-10'});s.items=[item('Gehalt',300000,'income','month','2026-10'),{...item('Entnahme',50000,'income','month','2026-10'),potId:s.pots[0].id},item('Sparen',20000,'saving','month','2026-10'),item('Lebensmittel',40000,'expense','month','2026-10')];
  s=recordPlannedExpense(s,'Lebensmittel','2026-10',{amount:10000,date:'2026-10-02'});
- let r=reconcileMonth(s,'2026-10');assert.equal(r.budgetIncome,300000);assert.equal(r.afterRecorded,320000);assert.equal(r.planOpen,30000);assert.equal(r.afterOpen,290000);
- s=recordPlannedExpense(s,'Lebensmittel','2026-10',{complete:true,date:'2026-10-03'});r=reconcileMonth(s,'2026-10');assert.equal(r.afterRecorded,290000);assert.equal(r.planOpen,0);assert.equal(r.afterOpen,290000);
+ let r=reconcileMonth(s,'2026-10');assert.equal(r.budgetIncome,300000);assert.equal(r.afterRecorded,340000);assert.equal(r.planOpen,30000);assert.equal(r.afterOpen,310000);
+ s=recordPlannedExpense(s,'Lebensmittel','2026-10',{complete:true,date:'2026-10-03'});r=reconcileMonth(s,'2026-10');assert.equal(r.afterRecorded,310000);assert.equal(r.planOpen,0);assert.equal(r.afterOpen,310000);
 });

@@ -23,12 +23,11 @@ export function createSavingsUI(ctx){
   const firstMonth=()=>M()<currentMonth()?currentMonth():M();
   const freeIn=(state,m)=>reconcileMonth(state,m).afterOpen;
   const close=()=>ctx.closeDialog();
-  // Ab 3.5.3: Ein Betrag gehört in den Monat, für den das Gehalt gedacht ist. Das Gehalt kommt am Ende des Vormonats,
-  // die Sparraten dieses Planmonats gehen sofort davon in den Topf. Darum:
-  // Stand im Monat (groß) = Stand nach allen Bewegungen des Planmonats (reserveSummary.balance).
-  // Stand am Monatsende (klein) = zusätzlich die festen Raten des Folgemonats, die mit dem nächsten Gehalt kommen.
-  const nextRates=id=>projected(S(),shiftMonth(M(),1)).filter(i=>i.potId===id&&i.type==='saving'&&i.frequency!=='once').reduce((n,i)=>n+i.monthlyAmount,0);
-  const atNow=p=>p?{...p,end:p.balance+nextRates(p.id)}:p;
+  // Zeitmodell (ab 3.5.5, bestätigt vom Nutzer): Ein Sparposten steht im Monat der Überweisung. Die festen Raten des
+  // Monats M gehen am Ende von M vom neuen Gehalt ab (das Gehalt ist für M+1, darum zählen sie im Budget von M+1, siehe planner.js).
+  // Anfang M = Monatsanfang + einmalige Einzahlungen − Entnahmen im Monat; Ende M = nach allen Bewegungen von M (inkl. fester Raten).
+  const during=p=>p.opening+p.movements.reduce((n,i)=>n+(i.type==='income'?-i.monthlyAmount:i.frequency==='once'?i.monthlyAmount:0),0);
+  const atNow=p=>p?{...p,end:p.balance,balance:during(p)}:p;
   // „Anfang M“ = nach dem Gehalt Ende Vormonat (mit den Raten des Planmonats M) plus Einzahlungen zwischendurch;
   // „Ende M“ = nach dem Gehalt Ende M (mit den Raten des Planmonats M+1).
   const whenLabel=()=>'Anfang '+monthName(M());
@@ -58,7 +57,7 @@ export function createSavingsUI(ctx){
       else{kind='rate';line=whole(rate.amount)+' im Monat'+(rate.running?'':' ab '+short(rate.start))}
     }
     else{kind='flex';line=until&&need?'bis '+short(g.deadline):'flexibel'}
-    const bal=gp.balance,endBal=gp.pot?gp.balance+nextRates(gp.pot.id):gp.balance;
+    const bal=gp.pot?during(gp.pot):gp.balance,endBal=gp.balance;
     return {gp,rate,missing,kind,line,need,until,balance:bal,end:endBal,pct:g.price?bal/g.price*100:0};
   }
   function potInfo(p){
@@ -109,13 +108,13 @@ export function createSavingsUI(ctx){
     const empty=!goals.length&&!s.pots.length;
     const hint=cands.length?`<button class="sv-hint" data-action="sinking-open">${icon('calendar')}<span><b>Jahreskosten glätten</b><small>${cands.length===1?esc(cands[0].item.title)+' kostet':cands.length+' Zahlungen kosten'} ${whole(cands.reduce((n,c)=>n+Math.round(c.amount*12/c.interval),0))} im Jahr. Mit ${whole(cands.reduce((n,c)=>n+c.monthly,0))} im Monat trifft Dich kein Zahlungsmonat mehr unvorbereitet.</small></span>${icon('right')}</button>`:'';
     const shownRest=rest.map(atNow),r=reserves(shownRest),inGoals=s.pots.filter(p=>goalPots.has(p.id)).reduce((n,p)=>n+atNow(p).balance,0);
-    const nowNote=rest.length||goals.length?`<p class="sv-info">${icon('info')}<span>${esc(whenLabel())}: nach dem Gehalt Ende ${esc(monthOnly(shiftMonth(m,-1)))}, also mit den Raten, die im ${esc(monthOnly(m))} eingetragen sind, dazu Ein- und Auszahlungen zwischendurch. ${esc(endLabel())}: nach dem Gehalt Ende ${esc(monthOnly(m))}, also mit den Raten, die im ${esc(monthOnly(shiftMonth(m,1)))} eingetragen sind.</span></p>`:'';
+    const nowNote=rest.length||goals.length?`<p class="sv-info">${icon('info')}<span>${esc(whenLabel())}: nach der Überweisung Ende ${esc(monthOnly(shiftMonth(m,-1)))}, dazu was Du zwischendurch ein- oder auszahlst. ${esc(endLabel())}: dazu die festen Sparraten des ${esc(monthOnly(m))}, die Ende ${esc(monthOnly(m))} vom neuen Gehalt abgehen.</span></p>`:'';
     const goalsHTML=`<section class="sv-group sv-goals"><header class="group-head"><h2>Ziele</h2>${goals.length?`<span>${whole(goals.reduce((n,g)=>n+g.price,0))}</span>`:''}</header><div class="tiles">${goals.map(g=>goalTile(g,atNow(s.pots.find(p=>p.id===g.potId)))).join('')}</div>${addLine('goal-new','Neues Ziel')}</section>`;
     return `${unlinked.length?`<div class="notice"><span>${euro(unlinked.reduce((n,i)=>n+i.monthlyAmount,0))} Sparen ohne Topf: im Budget reserviert, aber keinem Topf zugeordnet.</span><button class="textbtn" data-action="pot-link">Zuordnen</button></div>`:''}
 ${empty?'<p class="sv-intro">Eine Rücklage ist Geld mit Zweck, etwa ein Notgroschen. Ein Ziel ist etwas, das Du Dir leisten willst. Du sparst mit fester Monatsrate oder zahlst ein, wann es passt.</p>':''}
 <section class="sv-group sv-reserves"><header class="group-head"><h2>Rücklagen</h2></header>${r.html}${nowNote}${addLine('pot-new','Neue Rücklage')}${hint}</section>
 ${goalsHTML}
-<p class="sv-foot">${inGoals?`In Zielen ${esc(whenLabel())}: ${euro(inGoals)} · `:''}${t.saving?`${euro(t.saving)} Sparraten im ${esc(monthOnly(m))} · `:''}${euro(free)} im ${esc(monthOnly(m))} frei</p>
+<p class="sv-foot">${inGoals?`In Zielen ${esc(whenLabel())}: ${euro(inGoals)} · `:''}${t.saving?`${euro(t.saving)} Sparraten im ${esc(monthOnly(m))}-Budget · `:''}${euro(free)} im ${esc(monthOnly(m))} frei</p>
 ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.length}</span></summary><ul class="rows">${done.map(g=>`<li class="row is-plain"><button class="row-main" data-action="goal-edit" data-id="${g.id}"><span class="row-title">${esc(g.title)}</span><span class="row-sub">${euro(g.price)}</span></button><button class="textbtn" data-action="goal-reopen" data-id="${g.id}">Wieder öffnen</button></li>`).join('')}</ul></details>`:''}`;
   }
 
@@ -159,7 +158,7 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
   }
 
   // ---- Dialoge: Einzahlen, Rate, neues Ziel ----
-  const monthOptions=name=>{const a=firstMonth(),b=shiftMonth(a,1);return `<select name="${name}">${[b,a].map((x,k)=>`<option value="${x}" ${k?'':'selected'}>ab ${esc(short(x))} · Gehalt Ende ${esc(short(shiftMonth(x,-1)).replace(/ \d{4}$/,''))}</option>`).join('')}</select>`};
+  const monthOptions=name=>{const a=firstMonth(),b=shiftMonth(a,1);return `<select name="${name}">${[a,b].map((x,k)=>`<option value="${x}" ${k?'':'selected'}>ab ${esc(short(x))} · erste Überweisung Ende ${esc(short(x).replace(/ \d{4}$/,''))}</option>`).join('')}</select>`};
   const footer=label=>`<div class="form-footer"><button type="button" class="btn btn-outline" data-action="close">Abbrechen</button><button type="submit" class="btn btn-primary">${label}</button></div>`;
 
   function deposit(el){
@@ -208,7 +207,7 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
   }
   // Liest Rate-Dialog und „Neues Ziel“ und rechnet Termin ↔ Rate.
   function computeRate(form){
-    const mode=field(form,'mode')||'rate',start=field(form,'start')||shiftMonth(firstMonth(),1);
+    const mode=field(form,'mode')||'rate',start=field(form,'start')||firstMonth();
     if(mode==='none'||mode==='flex')return {mode,start};
     const {goalId,potId:livePot,kind}=live,g=goalId?S().goals.find(x=>x.id===goalId):null,potId=g?g.potId||'':livePot;
     if(kind==='rate'&&!g){
@@ -232,17 +231,18 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
     }catch(e){return {mode,start,error:e.message}}
   }
   // Was die Rate kostet: frei im Startmonat danach und der knappste Monat (höchstens zwei Jahre geprüft).
+  // Eine feste Rate im Monat X geht Ende X ab und belastet das Budget von X+1 (ab 3.5.5).
   function costText(potId,start,rate,end){
-    const base=potId?withoutRates(S(),potId,start):S(),last=end||shiftMonth(start,11);
+    const base=potId?withoutRates(S(),potId,start):S(),firstBudget=shiftMonth(start,1),last=shiftMonth(end||shiftMonth(start,11),1);
     let first=null,worst=null;
-    for(let m=start,k=0;m<=last&&k<24;m=shiftMonth(m,1),k++){
+    for(let m=firstBudget,k=0;m<=last&&k<24;m=shiftMonth(m,1),k++){
       const left=freeIn(base,m)-rate;
       if(first===null)first=left;
       if(!worst||left<worst.left)worst={m,left};
     }
-    let out=`Im ${esc(monthName(start))} bleiben damit <b class="${first<0?'is-negative':''}">${euro(first)}</b> frei.`;
+    let out=`Im ${esc(monthName(firstBudget))} bleiben damit <b class="${first<0?'is-negative':''}">${euro(first)}</b> frei.`;
     if(worst&&worst.left<0)out+=` <span class="is-negative">Im ${esc(monthName(worst.m))} fehlen dann ${euro(-worst.left)}.</span>`;
-    else if(worst&&worst.m!==start&&worst.left<first-100)out+=` Knappster Monat: ${esc(monthName(worst.m))} mit ${euro(worst.left)}.`;
+    else if(worst&&worst.m!==firstBudget&&worst.left<first-100)out+=` Knappster Monat: ${esc(monthName(worst.m))} mit ${euro(worst.left)}.`;
     return out;
   }
   function preview(form){
@@ -320,9 +320,8 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
   function sinkingStart(el){
     const now=currentMonth(),c=sinkingCandidates(S(),now).find(x=>x.key===el.dataset.key);
     if(!c)throw Error('Für diese Zahlung gibt es schon eine Rücklage.');
-    // Die erste Rate geht mit dem nächsten Gehalt ein, gehört also zum Folgemonat.
-    const m=shiftMonth(now,1),o=sinkingOptions(c,m),revision=S().revision;
-    const choice=o.onlyLater?`<p class="bodycopy spaced">Die Zahlung im ${esc(monthName(c.next))} geht noch wie bisher vom Monat ab. Ab ${esc(monthName(o.laterStart))} legst Du ${whole(o.regular)} im Monat zurück, ab ${esc(monthName(o.firstLater))} kommt sie aus dem Topf.</p><input type="hidden" name="mode" value="later">`:o.catchUp?`<div class="opt-list spaced"><label><input type="radio" name="mode" value="now" checked><span><b>Schon die nächste Zahlung abdecken</b><small>${whole(o.catchUp)} im Monat bis ${esc(monthName(c.next))}, danach ${whole(o.regular)}.</small></span></label><label><input type="radio" name="mode" value="later"><span><b>${whole(o.regular)} im Monat ab ${esc(monthName(o.laterStart))}</b><small>Die Zahlung im ${esc(monthName(c.next))} geht noch wie bisher vom Monat ab. Ab ${esc(monthName(o.firstLater))} kommt sie aus dem Topf.</small></span></label></div>`:`<p class="bodycopy spaced">${whole(o.regular)} im Monat ab ${esc(monthName(m))}. Bis ${esc(monthName(c.next))} ist das Geld für die nächste Zahlung zusammen.</p>`;
+    const m=now,o=sinkingOptions(c,m),revision=S().revision;
+    const choice=o.onlyLater?`<p class="bodycopy spaced">Die Zahlung im ${esc(monthName(c.next))} geht noch wie bisher vom Monat ab. Ab ${esc(monthName(o.laterStart))} legst Du ${whole(o.regular)} im Monat zurück, ab ${esc(monthName(o.firstLater))} kommt sie aus dem Topf.</p><input type="hidden" name="mode" value="later">`:o.catchUp?`<div class="opt-list spaced"><label><input type="radio" name="mode" value="now" checked><span><b>Schon die nächste Zahlung abdecken</b><small>${whole(o.catchUp)} im Monat bis ${esc(monthName(shiftMonth(c.next,-1)))}, danach ${whole(o.regular)}.</small></span></label><label><input type="radio" name="mode" value="later"><span><b>${whole(o.regular)} im Monat ab ${esc(monthName(o.laterStart))}</b><small>Die Zahlung im ${esc(monthName(c.next))} geht noch wie bisher vom Monat ab. Ab ${esc(monthName(o.firstLater))} kommt sie aus dem Topf.</small></span></label></div>`:`<p class="bodycopy spaced">${whole(o.regular)} im Monat ab ${esc(monthName(m))}. Bis ${esc(monthName(c.next))} ist das Geld für die nächste Zahlung zusammen.</p>`;
     ctx.openDialog(esc(c.item.title),`<form id="sv-sinking-form"><p class="bodycopy">${euro(c.amount)} ${c.interval===3?'alle 3 Monate':'einmal im Jahr'}, nächste im ${esc(monthName(c.next))}.</p>${choice}<p class="helper spaced">Angelegt werden ein Topf „${esc(c.item.title)}“, die Monatsrate und im Zahlungsmonat eine Entnahme in Höhe der Zahlung. Mit „Rückgängig“ ist alles wieder weg.</p>${footer('Rücklage anlegen')}</form>`,form=>{
       if(S().revision!==revision)throw Error('Der Stand hat sich geändert. Bitte erneut öffnen.');
       const n=applySinking(S(),c,m,{mode:field(form,'mode')||'now'});

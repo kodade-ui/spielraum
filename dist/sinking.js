@@ -38,12 +38,16 @@ export function sinkingCandidates(state,month){
 
 // Zwei Wege: „now“ deckt schon die nächste Zahlung (bis dahin höhere Rate, falls nötig),
 // „later“ lässt die nächste Zahlung wie bisher und spart ab dem Monat danach genau für die übernächste. Ist genug Zeit, gibt es nur „now“.
+// Ab 3.5.5: Eine Rate im Monat X wird Ende X überwiesen. Für eine Zahlung im Monat N zählen also die Raten bis N−1.
+// „now“: bis N−1 eine höhere Rate, ab N die normale. „later“: Zahlung N noch aus dem Monat, Rate ab N, Entnahme ab N+Intervall.
 export function sinkingOptions(c,month,saved=0){
-  const k=monthsBetween(month,c.next)+1,enough=saved+k*c.monthly>=c.amount;
-  // Ist die Zahlung schon in diesem Monat fällig, bringt eine Rate bis dahin nichts: dann nur „later“.
-  return {months:k,regular:c.monthly,catchUp:enough?0:k>0?euroUp(Math.ceil(Math.max(0,c.amount-saved)/k)):c.amount,onlyLater:!enough&&k<=1,laterStart:shiftMonth(c.next,1),firstLater:shiftMonth(c.next,c.interval)};
+  const k=Math.max(0,monthsBetween(month,c.next)),enough=saved+k*c.monthly>=c.amount;
+  const laterStart=c.next>month?c.next:month;
+  let firstLater=shiftMonth(c.next,c.interval);
+  while(monthsBetween(laterStart,firstLater)<c.interval)firstLater=shiftMonth(firstLater,c.interval);
+  // Ist die Zahlung fällig, bevor eine Rate überwiesen ist, bringt eine Rate bis dahin nichts: dann nur „later“.
+  return {months:k,regular:c.monthly,catchUp:enough?0:k>0?euroUp(Math.ceil(Math.max(0,c.amount-saved)/k)):c.amount,onlyLater:!enough&&k===0,laterStart,firstLater};
 }
-
 export function applySinking(state,c,month,{mode='now',saved=0}={}){
   const o=sinkingOptions(c,month,saved),title=c.item.title;
   if(o.onlyLater)mode='later';
@@ -56,10 +60,11 @@ export function applySinking(state,c,month,{mode='now',saved=0}={}){
   n=upsertItem(n,withdrawal,null,first);
   const save=(amount,start,stop,groupId)=>upsertItem(n,{title:('Rücklage '+title).slice(0,160),amount,type:'saving',category:sCat,frequency:'month',start,end:stop,note:'',potId,...(groupId?{groupId}:{})},null,start);
   if(mode==='now'&&o.catchUp){
-    n=save(o.catchUp,month,c.next,'');
+    const lastCatch=shiftMonth(c.next,-1);
+    n=save(o.catchUp,month,lastCatch,'');
     const firstRate=n.items.at(-1);
     firstRate.groupId=firstRate.id;
-    if(!end||end>c.next)n=save(o.regular,shiftMonth(c.next,1),end,firstRate.id);
+    if(!end||end>=c.next)n=save(o.regular,c.next,end,firstRate.id);
   }
   else if(first!==c.next)n=save(o.regular,o.laterStart,end,'');
   else n=save(o.regular,month,end,'');

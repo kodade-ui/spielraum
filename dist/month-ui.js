@@ -1,7 +1,7 @@
 // Bereich „Monat“ (ab 3.0): Monatsplan und tatsächliche Ausgaben in einer Ansicht.
 // Rechnet ausschließlich über vorhandene Fachfunktionen (reconcileMonth, recordPlannedExpense,
 // saveActual, saveEntryClassification). Keine eigene Geldlogik außer Summen für die Anzeige.
-import {euro,amountText,monthName,currentMonth,shiftMonth,totals,projected,money,validDate,legacyAnnual} from './planner.js';
+import {euro,amountText,monthName,currentMonth,shiftMonth,totals,projected,budgetSavings,money,validDate,legacyAnnual} from './planner.js';
 import {reconcileMonth,recordPlannedExpense,saveEntryClassification} from './reconciliation.js';
 import {saveActual} from './actuals.js';
 import {planChanges} from './budget-insights.js';
@@ -42,7 +42,7 @@ export function createMonthUI(ctx){
   // Rechenweg: Einnahmen − Sparen − Erfasstes = Kontostand (geschätzt); minus offene Rechnungen und Rest in Budgets = Noch frei.
   function cashSheet(){
     const m=M(),r=reconcileMonth(S(),m),c=cash(r),line=(label,value,cls='')=>`<li class="${cls}"><span>${label}</span><b>${value}</b></li>`;
-    ctx.openDialog('Auf dem Konto, geschätzt',`<div class="sheet-body"><ul class="cash-table">${line('Einnahmen im '+esc(monthName(m))+(r.reserveWithdrawals?` <small>davon ${euro(r.reserveWithdrawals)} aus Töpfen</small>`:''),'+'+euro(r.availableIncome))}${line('Sparen, gleich mit dem Gehalt','−'+euro(r.plannedSaving))}${line('Schon bezahlt und ausgegeben','−'+euro(r.actualTotal))}${line('Auf dem Konto, geschätzt',euro(c),'is-sum'+(c<0?' is-negative':''))}<li class="cash-sub">Davon noch gebunden</li>${line('Offene Rechnungen','−'+euro(r.fixedOpen))}${line('Rest in Budgets','−'+euro(r.variableOpen))}${line('Noch frei',euro(r.afterOpen),'is-sum'+(r.afterOpen<0?' is-negative':''))}</ul><p class="helper spaced">Kein echter Kontostand, sondern gerechnet: Einnahmen des Monats minus Sparraten (die gehen gleich mit dem Gehalt weg) minus allem, was Du als bezahlt abgehakt oder als Kauf erfasst hast. Was Du nicht einträgst, fehlt hier. Vergleiche ab und zu mit Deinem echten Konto.</p></div>`);
+    ctx.openDialog('Auf dem Konto, geschätzt',`<div class="sheet-body"><ul class="cash-table">${line('Einnahmen im '+esc(monthName(m))+(r.reserveWithdrawals?` <small>davon ${euro(r.reserveWithdrawals)} aus Töpfen</small>`:''),'+'+euro(r.availableIncome))}${line('Sparen'+(r.plannedSaving?' <small>überwiesen Ende '+esc(monthName(shiftMonth(m,-1)))+' mit dem Gehalt</small>':''),'−'+euro(r.plannedSaving))}${line('Schon bezahlt und ausgegeben','−'+euro(r.actualTotal))}${line('Auf dem Konto, geschätzt',euro(c),'is-sum'+(c<0?' is-negative':''))}<li class="cash-sub">Davon noch gebunden</li>${line('Offene Rechnungen','−'+euro(r.fixedOpen))}${line('Rest in Budgets','−'+euro(r.variableOpen))}${line('Noch frei',euro(r.afterOpen),'is-sum'+(r.afterOpen<0?' is-negative':''))}</ul><p class="helper spaced">Kein echter Kontostand, sondern gerechnet: Einnahmen des Monats minus der Sparraten, die mit diesem Gehalt überwiesen wurden, minus allem, was Du als bezahlt abgehakt oder als Kauf erfasst hast. Was Du nicht einträgst, fehlt hier. Vergleiche ab und zu mit Deinem echten Konto.</p></div>`);
   }
 
   function flow(r){
@@ -76,11 +76,12 @@ export function createMonthUI(ctx){
 
   function planRow(i){
     const pot=S().pots.find(p=>p.id===i.potId),income=i.type==='income';
-    // Ab 3.5.4: Bei Sparraten steht dabei, von welchem Gehalt sie abgehen (Gehalt Ende Vormonat = Geld für diesen Monat).
-    const prevShort=new Intl.DateTimeFormat('de-DE',{month:'long'}).format(new Date(shiftMonth(M(),-1)+'-01T12:00:00'));
-    const when=i.type==='saving'&&i.frequency!=='once'?'geht Ende '+prevShort+' vom Gehalt ab':'';
+    // Ab 3.5.5: Sparposten im Budget dieses Monats = feste Raten, die Ende des Vormonats vom Gehalt überwiesen wurden,
+    // plus einmalige Einzahlungen in diesem Monat. Dabei steht, wann das Geld in den Topf geht.
+    const name=m=>new Intl.DateTimeFormat('de-DE',{month:'long'}).format(new Date(m+'-01T12:00:00'));
+    const when=i.upcoming?'geht Ende '+name(M())+' ab · zählt für '+name(shiftMonth(M(),1)):i.type==='saving'?(i.transferMonth&&i.transferMonth!==M()?'Überweisung Ende '+name(i.transferMonth):i.frequency==='once'?'Einzahlung im '+name(M()):''):'';
     const sub=[pot?(income?'aus ':'in ')+pot.name:'',when,dayOf(i)?'am '+dayOf(i)+'.':'',rhythm(i)].filter(Boolean).join(' · ');
-    return `<li class="row is-plain"><span class="dot-mark" style="--c:${themeColor(pot?.color||cat(i.category)?.color||'#5f8f80')}"></span><button class="row-main" data-action="edit-item" data-id="${i.id}"><span class="row-title">${esc(i.title)}</span>${sub?`<span class="row-sub">${esc(sub)}</span>`:''}</button><span class="row-amount ${income?'is-positive':''}">${income?'+':''}${euro(i.monthlyAmount)}</span></li>`;
+    return `<li class="row is-plain${i.upcoming?' is-upcoming':''}"><span class="dot-mark" style="--c:${themeColor(pot?.color||cat(i.category)?.color||'#5f8f80')}"></span><button class="row-main" data-action="edit-item" data-id="${i.id}"><span class="row-title">${esc(i.title)}</span>${sub?`<span class="row-sub">${esc(sub)}</span>`:''}</button><span class="row-amount ${income?'is-positive':''}">${income?'+':''}${euro(i.monthlyAmount)}</span></li>`;
   }
 
   function suggestFor(r,x){
@@ -101,7 +102,7 @@ export function createMonthUI(ctx){
     const m=M(),r=reconcileMonth(S(),m),t=totals(S(),m);
     const bills=r.links.filter(i=>i.budgetKind==='fixed').sort((a,b)=>(!a.open-!b.open)||(dayOf(a)||32)-(dayOf(b)||32)||b.monthlyAmount-a.monthlyAmount);
     const budgets=r.links.filter(i=>i.budgetKind==='variable').sort((a,b)=>(!a.open-!b.open)||b.monthlyAmount-a.monthlyAmount);
-    const plan=projected(S(),m),savings=plan.filter(i=>i.type==='saving').sort((a,b)=>b.monthlyAmount-a.monthlyAmount),incomes=plan.filter(i=>i.type==='income').sort((a,b)=>b.monthlyAmount-a.monthlyAmount);
+    const plan=projected(S(),m),savings=budgetSavings(S(),m).sort((a,b)=>b.monthlyAmount-a.monthlyAmount),upcoming=plan.filter(i=>i.type==='saving'&&i.frequency!=='once').sort((a,b)=>b.monthlyAmount-a.monthlyAmount),incomes=plan.filter(i=>i.type==='income').sort((a,b)=>b.monthlyAmount-a.monthlyAmount);
     const loose=r.unlinked.slice().sort((a,b)=>b.date.localeCompare(a.date));
     const linkable=loose.filter(x=>suggestFor(r,x)).length;
     const addLine=(action,label)=>`<button class="add-line" data-action="${action}">${icon('plus')}${label}</button>`;
@@ -111,7 +112,7 @@ ${closed(m)?'<div class="notice"><span>Dieser Monat wurde mit einer früheren Ve
 ${section('Rechnungen',r.fixedOpen?euro(r.fixedOpen)+' gehen noch ab':bills.length?'alles bezahlt':'',bills.map(billRow),addLine('new-expense','Rechnung oder Budget'))}
 ${budgets.length?section('Budgets',r.variableOpen?euro(r.variableOpen)+' übrig':'aufgebraucht',budgets.map(budgetRow),''):''}
 ${loose.length?section('Ohne Budget',euro(loose.reduce((n,x)=>n+x.amount,0)),loose.map(x=>looseRow(r,x)),linkable>1&&!closed(m)?`<button class="add-line" data-action="month-link-all">${icon('check')}Alle ${linkable} passend zuordnen</button>`:''):''}
-${section('Sparen',savings.length?euro(r.plannedSaving)+' im Monat':'',savings.map(planRow),addLine('new-saving','Rücklage'))}
+${section('Sparen',savings.length?euro(r.plannedSaving)+' im Monat':'',[...savings.map(planRow),...upcoming.map(i=>planRow({...i,upcoming:true}))],addLine('new-saving','Rücklage'))}
 ${section('Einnahmen',incomes.length?euro(r.availableIncome):'',incomes.map(planRow),addLine('new-income','Einnahme'))}
 ${all.length?`<details class="journal"><summary>Alle Käufe im ${esc(monthName(m))} <span>${all.length} · ${euro(r.actualTotal)}</span></summary><ul class="rows">${all.map(x=>{const link=r.links.find(i=>i.payments.some(p=>p.id===x.id));return `<li class="row is-plain"><span class="dot-mark" style="--c:${themeColor(cat(x.category)?.color||'#8d9590')}"></span><button class="row-main" data-action="reconcile-edit" data-id="${x.id}"><span class="row-title">${esc(x.title)}</span><span class="row-sub">${esc(shortDate(x.date))} · ${link?esc(link.title):'ohne Budget'}</span></button><span class="row-amount">${euro(x.amount)}</span></li>`}).join('')}</ul></details>`:''}`;
   }
