@@ -69,6 +69,13 @@ test('A payment due this month is only smoothed from the next cycle',()=>{
   const before=totals(s,M).remaining,n=applySinking(s,c,M,{mode:'now'}),pid=n.pots.at(-1).id;
   assert.equal(totals(n,M).remaining,before);assert.equal(totals(n,'2026-11').saving,6000);assert.equal(bal(n,pid,'2027-01'),0);assert.equal(totals(n,'2027-01').remaining,totals(s,'2027-01').remaining+18000-6000);
 });
+test('A payment due before the first rate month is only smoothed from the next cycle',()=>{
+  const s=base();s.items.push({id:'q',title:'Kfz',amount:18000,type:'expense',category:'c6',frequency:'quarter',cycleStart:M,start:M,end:'',note:''});
+  const c=sinkingCandidates(s,M)[0],next=shiftMonth(M,1),o=sinkingOptions(c,next);
+  assert.equal(o.onlyLater,true);assert.ok(Number.isFinite(o.catchUp));
+  const n=applySinking(s,c,next,{mode:'now'}),pid=n.pots.at(-1).id;
+  assert.equal(totals(n,M).remaining,totals(s,M).remaining);assert.equal(totals(n,next).saving,6000);assert.equal(bal(n,pid,'2027-01'),0);
+});
 test('Backups with covers and dismissed suggestions validate; broken links are rejected',async()=>{
   const {validate}=await import('../dist/planner.js');
   let s=base();s=createPot(s,{name:'R',month:M,balance:0});const pid=s.pots[0].id;

@@ -23,11 +23,12 @@ export function createSavingsUI(ctx){
   const firstMonth=()=>M()<currentMonth()?currentMonth():M();
   const freeIn=(state,m)=>reconcileMonth(state,m).afterOpen;
   const close=()=>ctx.closeDialog();
-  // Ab 3.5.2, in jedem Monat gleich: groß der Stand im Monat, klein der Stand am Monatsende.
-  // Stand im Monat = Monatsanfang + Einzahlungen zwischendurch (einmalig) − Entnahmen. Feste, wiederkehrende
-  // Sparraten zahlt der Nutzer mit dem Gehalt am Monatsende ein; sie zählen erst im Stand am Monatsende („end“).
-  const during=p=>p.opening+p.movements.reduce((n,i)=>n+(i.type==='income'?-i.monthlyAmount:i.frequency==='once'?i.monthlyAmount:0),0);
-  const atNow=p=>p?{...p,end:p.balance,balance:during(p)}:p;
+  // Ab 3.5.3: Ein Betrag gehört in den Monat, für den das Gehalt gedacht ist. Das Gehalt kommt am Ende des Vormonats,
+  // die Sparraten dieses Planmonats gehen sofort davon in den Topf. Darum:
+  // Stand im Monat (groß) = Stand nach allen Bewegungen des Planmonats (reserveSummary.balance).
+  // Stand am Monatsende (klein) = zusätzlich die festen Raten des Folgemonats, die mit dem nächsten Gehalt kommen.
+  const nextRates=id=>projected(S(),shiftMonth(M(),1)).filter(i=>i.potId===id&&i.type==='saving'&&i.frequency!=='once').reduce((n,i)=>n+i.monthlyAmount,0);
+  const atNow=p=>p?{...p,end:p.balance+nextRates(p.id)}:p;
   const whenLabel=()=>'im '+monthName(M());
   // Welcher Dialog gerade offen ist (für die Live-Vorschau): kind = deposit | rate | goal, dazu Ziel bzw. Topf.
   let live={kind:'',goalId:'',potId:''};
@@ -54,8 +55,8 @@ export function createSavingsUI(ctx){
       else{kind='rate';line=whole(rate.amount)+' im Monat'+(rate.running?'':' ab '+short(rate.start))}
     }
     else{kind='flex';line=until&&need?'bis '+short(g.deadline):'flexibel'}
-    const bal=gp.pot?during(gp.pot):gp.balance;
-    return {gp,rate,missing,kind,line,need,until,balance:bal,end:gp.balance,pct:g.price?bal/g.price*100:0};
+    const bal=gp.balance,endBal=gp.pot?gp.balance+nextRates(gp.pot.id):gp.balance;
+    return {gp,rate,missing,kind,line,need,until,balance:bal,end:endBal,pct:g.price?bal/g.price*100:0};
   }
   function potInfo(p){
     const m=M(),sink=sinkingStatus(S(),p.id,m),rate=potRate(S(),p.id,m);
@@ -105,13 +106,13 @@ export function createSavingsUI(ctx){
     const empty=!goals.length&&!s.pots.length;
     const hint=cands.length?`<button class="sv-hint" data-action="sinking-open">${icon('calendar')}<span><b>Jahreskosten glätten</b><small>${cands.length===1?esc(cands[0].item.title)+' kostet':cands.length+' Zahlungen kosten'} ${whole(cands.reduce((n,c)=>n+Math.round(c.amount*12/c.interval),0))} im Jahr. Mit ${whole(cands.reduce((n,c)=>n+c.monthly,0))} im Monat trifft Dich kein Zahlungsmonat mehr unvorbereitet.</small></span>${icon('right')}</button>`:'';
     const shownRest=rest.map(atNow),r=reserves(shownRest),inGoals=s.pots.filter(p=>goalPots.has(p.id)).reduce((n,p)=>n+atNow(p).balance,0);
-    const nowNote=rest.length||goals.length?`<p class="sv-info">${icon('info')}<span>Groß: Stand im Monat, mit allem, was Du zwischendurch einzahlst oder entnimmst. Klein: Stand am Monatsende, wenn die festen Sparraten mit dem Gehalt dazukommen.</span></p>`:'';
+    const nowNote=rest.length||goals.length?`<p class="sv-info">${icon('info')}<span>Groß: Stand im Monat. Die Sparraten dieses Monats sind schon drin (sie kommen mit dem Gehalt Ende Vormonat), ebenso alles, was Du zwischendurch ein- oder auszahlst. Klein: dazu die Raten, die mit dem nächsten Gehalt kommen.</span></p>`:'';
     const goalsHTML=`<section class="sv-group sv-goals"><header class="group-head"><h2>Ziele</h2>${goals.length?`<span>${whole(goals.reduce((n,g)=>n+g.price,0))}</span>`:''}</header><div class="tiles">${goals.map(g=>goalTile(g,atNow(s.pots.find(p=>p.id===g.potId)))).join('')}</div>${addLine('goal-new','Neues Ziel')}</section>`;
     return `${unlinked.length?`<div class="notice"><span>${euro(unlinked.reduce((n,i)=>n+i.monthlyAmount,0))} Sparen ohne Topf: im Budget reserviert, aber keinem Topf zugeordnet.</span><button class="textbtn" data-action="pot-link">Zuordnen</button></div>`:''}
 ${empty?'<p class="sv-intro">Eine Rücklage ist Geld mit Zweck, etwa ein Notgroschen. Ein Ziel ist etwas, das Du Dir leisten willst. Du sparst mit fester Monatsrate oder zahlst ein, wann es passt.</p>':''}
 <section class="sv-group sv-reserves"><header class="group-head"><h2>Rücklagen</h2></header>${r.html}${nowNote}${addLine('pot-new','Neue Rücklage')}${hint}</section>
 ${goalsHTML}
-<p class="sv-foot">${inGoals?`In Zielen ${esc(whenLabel())}: ${euro(inGoals)} · `:''}${t.saving?`${euro(t.saving)} gehen im ${esc(monthOnly(m))} in Töpfe · `:''}${euro(free)} im ${esc(monthOnly(m))} frei</p>
+<p class="sv-foot">${inGoals?`In Zielen ${esc(whenLabel())}: ${euro(inGoals)} · `:''}${t.saving?`${euro(t.saving)} Sparraten im ${esc(monthOnly(m))} · `:''}${euro(free)} im ${esc(monthOnly(m))} frei</p>
 ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.length}</span></summary><ul class="rows">${done.map(g=>`<li class="row is-plain"><button class="row-main" data-action="goal-edit" data-id="${g.id}"><span class="row-title">${esc(g.title)}</span><span class="row-sub">${euro(g.price)}</span></button><button class="textbtn" data-action="goal-reopen" data-id="${g.id}">Wieder öffnen</button></li>`).join('')}</ul></details>`:''}`;
   }
 
@@ -155,7 +156,7 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
   }
 
   // ---- Dialoge: Einzahlen, Rate, neues Ziel ----
-  const monthOptions=name=>{const a=firstMonth(),b=shiftMonth(a,1);return `<select name="${name}">${[a,b].map((x,k)=>`<option value="${x}" ${k?'':'selected'}>ab ${esc(monthName(x))}</option>`).join('')}</select>`};
+  const monthOptions=name=>{const a=firstMonth(),b=shiftMonth(a,1);return `<select name="${name}">${[b,a].map((x,k)=>`<option value="${x}" ${k?'':'selected'}>ab ${esc(short(x))} · Gehalt Ende ${esc(short(shiftMonth(x,-1)).replace(/ \d{4}$/,''))}</option>`).join('')}</select>`};
   const footer=label=>`<div class="form-footer"><button type="button" class="btn btn-outline" data-action="close">Abbrechen</button><button type="submit" class="btn btn-primary">${label}</button></div>`;
 
   function deposit(el){
@@ -204,7 +205,7 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
   }
   // Liest Rate-Dialog und „Neues Ziel“ und rechnet Termin ↔ Rate.
   function computeRate(form){
-    const mode=field(form,'mode')||'rate',start=field(form,'start')||firstMonth();
+    const mode=field(form,'mode')||'rate',start=field(form,'start')||shiftMonth(firstMonth(),1);
     if(mode==='none'||mode==='flex')return {mode,start};
     const {goalId,potId:livePot,kind}=live,g=goalId?S().goals.find(x=>x.id===goalId):null,potId=g?g.potId||'':livePot;
     if(kind==='rate'&&!g){
@@ -314,9 +315,10 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
     ctx.openDialog('Jahreskosten glätten',`<div class="sheet-body"><p class="bodycopy">Diese Zahlungen kommen nicht jeden Monat und reißen dann ein Loch. Mit einer Rücklage legst Du jeden Monat einen Teil zurück; im Zahlungsmonat kommt das Geld aus dem Topf.</p><ul class="rows compact spaced">${cands.map(c=>`<li class="row is-plain"><span class="row-main"><span class="row-title">${esc(c.item.title)}</span><span class="row-sub">${euro(c.amount)} ${c.interval===3?'alle 3 Monate':'im Jahr'}, nächste im ${esc(monthName(c.next))}</span></span><button class="btn btn-outline small" data-action="sinking-start" data-key="${c.key}">${whole(c.monthly)} / Monat</button></li>`).join('')}</ul><details class="sheet-more"><summary>Vorschläge ausblenden</summary><div class="sheet-links">${cands.map(c=>`<button class="textbtn" data-action="sinking-dismiss" data-key="${c.key}">${esc(c.item.title)} nicht mehr vorschlagen</button>`).join('')}</div></details></div>`);
   }
   function sinkingStart(el){
-    const m=currentMonth(),c=sinkingCandidates(S(),m).find(x=>x.key===el.dataset.key);
+    const now=currentMonth(),c=sinkingCandidates(S(),now).find(x=>x.key===el.dataset.key);
     if(!c)throw Error('Für diese Zahlung gibt es schon eine Rücklage.');
-    const o=sinkingOptions(c,m),revision=S().revision;
+    // Die erste Rate geht mit dem nächsten Gehalt ein, gehört also zum Folgemonat.
+    const m=shiftMonth(now,1),o=sinkingOptions(c,m),revision=S().revision;
     const choice=o.onlyLater?`<p class="bodycopy spaced">Die Zahlung im ${esc(monthName(c.next))} geht noch wie bisher vom Monat ab. Ab ${esc(monthName(o.laterStart))} legst Du ${whole(o.regular)} im Monat zurück, ab ${esc(monthName(o.firstLater))} kommt sie aus dem Topf.</p><input type="hidden" name="mode" value="later">`:o.catchUp?`<div class="opt-list spaced"><label><input type="radio" name="mode" value="now" checked><span><b>Schon die nächste Zahlung abdecken</b><small>${whole(o.catchUp)} im Monat bis ${esc(monthName(c.next))}, danach ${whole(o.regular)}.</small></span></label><label><input type="radio" name="mode" value="later"><span><b>${whole(o.regular)} im Monat ab ${esc(monthName(o.laterStart))}</b><small>Die Zahlung im ${esc(monthName(c.next))} geht noch wie bisher vom Monat ab. Ab ${esc(monthName(o.firstLater))} kommt sie aus dem Topf.</small></span></label></div>`:`<p class="bodycopy spaced">${whole(o.regular)} im Monat ab ${esc(monthName(m))}. Bis ${esc(monthName(c.next))} ist das Geld für die nächste Zahlung zusammen.</p>`;
     ctx.openDialog(esc(c.item.title),`<form id="sv-sinking-form"><p class="bodycopy">${euro(c.amount)} ${c.interval===3?'alle 3 Monate':'einmal im Jahr'}, nächste im ${esc(monthName(c.next))}.</p>${choice}<p class="helper spaced">Angelegt werden ein Topf „${esc(c.item.title)}“, die Monatsrate und im Zahlungsmonat eine Entnahme in Höhe der Zahlung. Mit „Rückgängig“ ist alles wieder weg.</p>${footer('Rücklage anlegen')}</form>`,form=>{
       if(S().revision!==revision)throw Error('Der Stand hat sich geändert. Bitte erneut öffnen.');
