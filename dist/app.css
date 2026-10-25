@@ -250,6 +250,8 @@ dialog.modal[open]{position:fixed;inset:auto 0 0 0}
 .row-sub{font-size:13px;color:var(--muted);line-height:1.35}
 .row-amount{display:grid;justify-items:end;gap:2px;font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 .row-amount small{font-size:12px;font-weight:500;color:var(--muted)}
+.row.is-upcoming .row-title,.row.is-upcoming .row-amount{color:var(--muted);font-weight:550}
+.row.is-upcoming .dot-mark{opacity:.5}
 .row.is-done .row-title,.row.is-done .row-amount{color:var(--muted)}
 .row.is-done .row-amount{text-decoration:line-through;text-decoration-color:var(--faint)}
 .tick{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid var(--faint);display:grid;place-items:center;color:var(--primary-ink);position:relative}

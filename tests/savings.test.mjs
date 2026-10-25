@@ -23,20 +23,20 @@ test('A new goal creates pot, existing balance and optional fixed rate in one st
   let s=createGoal(base(),{title:'Rundreise',price:250000,saved:100000,month:M,rate:{rate:15000,start:M,end:'2027-07'}});
   const g=s.goals[0];
   assert.equal(g.deadline,'2027-07');assert.equal(bal(s,g.potId,M),115000);assert.equal(bal(s,g.potId,'2027-07'),250000);assert.equal(bal(s,g.potId,'2027-08'),250000);
-  assert.equal(totals(s,M).saving,15000);assert.equal(totals(s,M).income,300000,'existing money is not income');
-  s=createGoal(s,{title:'Lampe',price:9000,month:M});assert.equal(s.goals[1].deadline,'');assert.equal(totals(s,M).saving,15000,'flexible goal adds no rate');
+  assert.equal(totals(s,M).saving,0,'Rate Ende Oktober belastet das November-Budget');assert.equal(totals(s,shiftMonth(M,1)).saving,15000);assert.equal(totals(s,M).income,300000,'existing money is not income');
+  s=createGoal(s,{title:'Lampe',price:9000,month:M});assert.equal(s.goals[1].deadline,'');assert.equal(totals(s,shiftMonth(M,1)).saving,15000,'flexible goal adds no rate');
 });
 test('Changing the rate from a later month keeps earlier months; stopping ends it; deposits are one-off',()=>{
   let s=createGoal(base(),{title:'Auto',price:600000,month:M,rate:{rate:20000,start:M,end:'2028-12'}});
   const id=s.goals[0].potId,nov=shiftMonth(M,1);
   const plan=planRate(s,{potId:id,price:600000,start:nov,rate:30000});
   s=applyRate(s,{potId:id,title:'Auto',rate:30000,start:nov,end:plan.end});
-  assert.equal(totals(s,M).saving,20000);assert.equal(totals(s,nov).saving,30000);assert.equal(potRate(s,id,M).amount,20000);assert.equal(potRate(s,id,nov).amount,30000);
+  assert.equal(totals(s,nov).saving,20000);assert.equal(totals(s,shiftMonth(nov,1)).saving,30000);assert.equal(potRate(s,id,M).amount,20000);assert.equal(potRate(s,id,nov).amount,30000);
   assert.equal(bal(s,id,plan.end)>=600000,true);assert.equal(bal(s,id,shiftMonth(plan.end,-1))<600000,true);
   s=applyRate(s,{potId:id,title:'Auto',rate:0,start:'2027-01'});
-  assert.equal(totals(s,'2027-01').saving,0);assert.equal(totals(s,'2026-12').saving,30000);
+  assert.equal(totals(s,'2027-02').saving,0);assert.equal(totals(s,'2027-01').saving,30000);
   s=addDeposit(s,{potId:id,title:'Auto',amount:5000,month:'2027-02'});
-  assert.equal(totals(s,'2027-02').saving,5000);assert.equal(totals(s,'2027-03').saving,0);
+  assert.equal(totals(s,'2027-02').saving,5000,'einmalige Einzahlung belastet den eigenen Monat');assert.equal(totals(s,'2027-03').saving,0);
 });
 test('A goal without pot (old wish) gets one on first money; the rate then starts there',()=>{
   let s=saveGoal(base(),{title:'Kamera',price:120000,deadline:'',potId:'',note:'',status:'active'});
@@ -51,30 +51,32 @@ test('Annual cost is smoothed: monthly rate, withdrawal in the payment month, th
   s.items.push({id:'old',title:'Alt',amount:12000,type:'expense',category:'c0',frequency:'year',start:'2026-01',end:'',note:''});
   const c=sinkingCandidates(s,M);
   assert.deepEqual(c.map(x=>[x.key,x.next,x.monthly]),[['ins','2027-03',5000],['water','2026-11',3000]],'legacy monthly share is not offered');
-  assert.deepEqual(sinkingOptions(c[0],M),{months:6,regular:5000,catchUp:10000,onlyLater:false,laterStart:'2027-04',firstLater:'2028-03'});
-  const marchBefore=totals(s,'2027-03').remaining;
+  assert.deepEqual(sinkingOptions(c[0],M),{months:5,regular:5000,catchUp:12000,onlyLater:false,laterStart:'2027-03',firstLater:'2028-03'});
+  const marchBefore=totals(s,'2027-03').remaining,octBefore=totals(s,M).remaining;
   let n=applySinking(s,c[0],M,{mode:'now'});const pid=n.pots.at(-1).id;
-  assert.equal(totals(n,'2027-03').remaining,marchBefore+60000-10000);
-  assert.equal(bal(n,pid,'2027-02'),50000);assert.equal(bal(n,pid,'2027-03'),0);assert.equal(bal(n,pid,'2028-03'),0);
+  assert.equal(totals(n,M).remaining,octBefore,'Rate Ende Oktober belastet erst den November');
+  assert.equal(totals(n,'2026-11').saving,12000);
+  assert.equal(totals(n,'2027-03').remaining,marchBefore+60000-12000);
+  assert.equal(bal(n,pid,'2027-02'),60000,'bis zur Zahlung sind fünf Raten überwiesen');assert.equal(bal(n,pid,'2027-03'),5000);assert.equal(bal(n,pid,'2028-03'),5000);
   assert.equal(totals(n,'2027-04').saving,5000);
-  assert.deepEqual(sinkingStatus(n,pid,M),{month:'2027-03',title:'Versicherung',amount:60000,before:60000,short:0});
+  assert.deepEqual(sinkingStatus(n,pid,M),{month:'2027-03',title:'Versicherung',amount:60000,before:65000,short:0});
   assert.ok(!sinkingCandidates(n,M).some(x=>x.key==='ins'));
   n=applySinking(s,c[0],M,{mode:'later'});const p2=n.pots.at(-1).id;
   assert.equal(totals(n,'2027-03').remaining,marchBefore,'next payment still from the month, nothing changes before');
-  assert.equal(totals(n,M).saving,0);assert.equal(totals(n,'2027-04').saving,5000);assert.equal(bal(n,p2,'2028-02'),55000);assert.equal(bal(n,p2,'2028-03'),0);
+  assert.equal(totals(n,M).saving,0);assert.equal(totals(n,'2027-04').saving,5000);assert.equal(bal(n,p2,'2028-02'),60000);assert.equal(bal(n,p2,'2028-03'),5000);
 });
 test('A payment due this month is only smoothed from the next cycle',()=>{
   const s=base();s.items.push({id:'q',title:'Kfz',amount:18000,type:'expense',category:'c6',frequency:'quarter',cycleStart:M,start:M,end:'',note:''});
-  const c=sinkingCandidates(s,M)[0],o=sinkingOptions(c,M);assert.equal(o.onlyLater,true);
-  const before=totals(s,M).remaining,n=applySinking(s,c,M,{mode:'now'}),pid=n.pots.at(-1).id;
-  assert.equal(totals(n,M).remaining,before);assert.equal(totals(n,'2026-11').saving,6000);assert.equal(bal(n,pid,'2027-01'),0);assert.equal(totals(n,'2027-01').remaining,totals(s,'2027-01').remaining+18000-6000);
+  const c=sinkingCandidates(s,M)[0],o=sinkingOptions(c,M);assert.equal(o.onlyLater,true);assert.equal(o.firstLater,'2027-01');
+  const n=applySinking(s,c,M,{mode:'now'}),pid=n.pots.at(-1).id;
+  assert.equal(totals(n,M).remaining,totals(s,M).remaining);assert.equal(totals(n,'2026-11').saving,6000);assert.equal(bal(n,pid,'2027-01'),6000);assert.equal(totals(n,'2027-01').remaining,totals(s,'2027-01').remaining+18000-6000);
 });
-test('A payment due before the first rate month is only smoothed from the next cycle',()=>{
+test('A payment due before the first rate month starts with the first full cycle',()=>{
   const s=base();s.items.push({id:'q',title:'Kfz',amount:18000,type:'expense',category:'c6',frequency:'quarter',cycleStart:M,start:M,end:'',note:''});
   const c=sinkingCandidates(s,M)[0],next=shiftMonth(M,1),o=sinkingOptions(c,next);
-  assert.equal(o.onlyLater,true);assert.ok(Number.isFinite(o.catchUp));
+  assert.equal(o.onlyLater,true);assert.ok(Number.isFinite(o.catchUp));assert.equal(o.laterStart,next);assert.equal(o.firstLater,'2027-04');
   const n=applySinking(s,c,next,{mode:'now'}),pid=n.pots.at(-1).id;
-  assert.equal(totals(n,M).remaining,totals(s,M).remaining);assert.equal(totals(n,next).saving,6000);assert.equal(bal(n,pid,'2027-01'),0);
+  assert.equal(totals(n,M).remaining,totals(s,M).remaining);assert.equal(totals(n,shiftMonth(next,1)).saving,6000);assert.ok(bal(n,pid,'2027-04')>=0);
 });
 test('Backups with covers and dismissed suggestions validate; broken links are rejected',async()=>{
   const {validate}=await import('../dist/planner.js');

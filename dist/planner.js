@@ -171,8 +171,16 @@ export function projected(s,m) {
     return {...i,monthlyAmount:amount};
   }).filter(i=>!i.source||i.monthlyAmount>0);
 }
+// Ab 3.5.5 (Zeitmodell des Nutzers): Feste Sparraten stehen im Monat der Überweisung (Ende des Monats, vom neuen Gehalt).
+// Das neue Gehalt ist für den Folgemonat – darum belasten feste Raten das Budget des Folgemonats.
+// Einmalige Einzahlungen gehen zwischendurch vom laufenden Geld ab und belasten den eigenen Monat.
+export function budgetSavings(s,m) {
+  const prev=shiftMonth(m,-1),own=projected(s,m).filter(i=>i.type==='saving'&&i.frequency==='once');
+  const fromPrev=validMonth(prev)?projected(s,prev).filter(i=>i.type==='saving'&&i.frequency!=='once').map(i=>({...i,transferMonth:prev})):[];
+  return [...fromPrev,...own.map(i=>({...i,transferMonth:m}))];
+}
 export function totals(s,m) {
-  const items=projected(s,m),sum=type=>items.filter(i=>i.type===type).reduce((n,i)=>n+i.monthlyAmount,0),income=sum('income'),expense=sum('expense'),saving=sum('saving');
+  const items=projected(s,m),sum=type=>items.filter(i=>i.type===type).reduce((n,i)=>n+i.monthlyAmount,0),income=sum('income'),expense=sum('expense'),saving=budgetSavings(s,m).reduce((n,i)=>n+i.monthlyAmount,0);
   return {items,income,expense,saving,reserveWithdrawals:items.filter(i=>i.type==='income'&&i.potId).reduce((n,i)=>n+i.monthlyAmount,0),remaining:income-expense-saving,planned:expense+saving,annualShare:items.filter(i=>legacyAnnual(i)&&i.type==='expense').reduce((n,i)=>n+i.monthlyAmount,0)};
 }
 export function distribution(s,m,mode='all') {

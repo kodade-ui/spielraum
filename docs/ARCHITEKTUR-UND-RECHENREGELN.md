@@ -91,6 +91,8 @@ Monatsabschlüsse benötigen explizite Bestätigung tatsächlicher Beträge/Voll
 
 ## Ziele, Rücklagen und Sparraten (ab 3.3)
 
+- **Zeitregel (ab 3.5.5):** Feste Sparraten stehen im Monat der Überweisung (Ende des Monats, vom neuen Gehalt) und belasten das Budget des Folgemonats (`budgetSavings`). Einmalige Einzahlungen belasten ihren eigenen Monat. Topfstände (`reserveSummary`) folgen dem Monat der Überweisung.
+
 - Ein Ziel hat einen Topf (neue Ziele legen ihn sofort an, mit „schon angespart“ als Bestand zu Beginn des Monats). Alte Ziele ohne Topf („Wünsche“ bis 3.2) bekommen ihn beim ersten Geld (`ensureGoalPot`). Ein Topf darf nur einem offenen Ziel zugeordnet sein.
 - Zwei Arten zu sparen: **fest** = monatlicher Sparposten mit `potId` (`applyRate`), **flexibel** = einmalige Sparposten im gewählten Monat (`addDeposit`). Beides senkt „frei“ im jeweiligen Monat wie jede Sparrate.
 - `planRate` rechnet Termin → Rate (Fehlbetrag am Termin / Monate ab Start, auf volle Euro aufgerundet) oder Rate → Termin (erster Monat, in dem geplanter Bestand + Rate × Monate ≥ Preis). Dabei zählen bestehende Einmalbeträge, die bisherige feste Rate ab Start wird ersetzt (`withoutRates`). Mehr als 120 Monate werden abgelehnt.
