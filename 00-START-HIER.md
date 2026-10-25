@@ -1,6 +1,6 @@
 # Spielraum an Claude übergeben
 
-Stand: 9. Oktober 2026 · App-Version 3.5.5 (Übergabe von GPT: 2.12, 6. Oktober 2026) · Deutsch · Android-PWA · https://kodade-ui.github.io/spielraum/
+Stand: 9. Oktober 2026 · App-Version 3.5.6 (Übergabe von GPT: 2.12, 6. Oktober 2026) · Deutsch · Android-PWA · https://kodade-ui.github.io/spielraum/
 
 Änderungen seit der Übergabe: `docs/AENDERUNGEN-2.13.md`, `docs/AENDERUNGEN-3.0.md`, `docs/AENDERUNGEN-3.1.md`, `docs/AENDERUNGEN-3.2.md`, `docs/AENDERUNGEN-3.2.1.md`, `docs/AENDERUNGEN-3.3.md`, `docs/AENDERUNGEN-3.4.md`, `docs/AENDERUNGEN-3.5.md`, `docs/AENDERUNGEN-3.5.1.md`, `docs/AENDERUNGEN-3.5.2.md`, `docs/AENDERUNGEN-3.5.3.md`, `docs/AENDERUNGEN-3.5.4.md`, `docs/AENDERUNGEN-3.5.5.md`.
 
