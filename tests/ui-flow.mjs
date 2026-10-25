@@ -59,7 +59,7 @@ const restorePots=storage.get(KEY);await get('#import-file').change({target:{fil
 console.log('PASS: reserves update keeps original data and backup; pot creation, deposit, withdrawal, correction and undo reconcile; linked-pot deletion blocked; restore retains balances.');
 // Cashflow edition: the actual UI event path, persistence, and separation from planning.
 await click({view:'plan'});await click({action:'new-expense'});input({title:'Zukunftsreise',amount:'300',potId:'__new','new-pot-name':'Fernreise',paymentDay:'31'});assert.match(get('#live-projection').innerHTML,/Rücklage für Fernreise/);assert.match(get('#live-projection').innerHTML,/300,00/);submit();const newPot=state().pots.find(p=>p.name==='Fernreise'),contribution=state().items.find(i=>i.title==='Zukunftsreise');assert.ok(newPot);assert.equal(contribution.type,'saving');assert.equal(contribution.potId,newPot.id);assert.equal(contribution.paymentDay,31);
-await click({view:'savings'});assert.match(page(),/Stand im /);assert.match(page(),/Fernreise/);assert.match(page(),/\+300\s€ im Monat/);assert.doesNotMatch(page(),/Abbuchungen & Entnahmen/);assert.ok(!page().includes('reserve-donut'));
+await click({view:'savings'});assert.match(page(),/Anfang /);assert.match(page(),/Fernreise/);assert.match(page(),/\+300\s€ im Monat/);assert.doesNotMatch(page(),/Abbuchungen & Entnahmen/);assert.ok(!page().includes('reserve-donut'));
 const planBefore=totals(state(),currentMonth()),reserveBefore=reserveSummary(state(),currentMonth());await click({view:'plan'});assert.match(page(),/Noch frei im/);await click({action:'actual-new'});submit({title:'Supermarkt',amount:'45,67',date:currentMonth()+'-12',category:'c1'});assert.equal(state().actualExpenses.length,1);assert.equal(state().actualExpenses[0].amount,4567);assert.match(page(),/45,67/);assert.match(page(),/Lebensmittel/);assert.deepEqual(totals(state(),currentMonth()),planBefore);assert.deepEqual(reserveSummary(state(),currentMonth()),reserveBefore);
 const purchase=state().actualExpenses[0];await click({action:'actual-edit',id:purchase.id});submit({amount:'50'});assert.equal(state().actualExpenses[0].amount,5000);assert.match(page(),/50,00/);assert.match(page(),/Ohne Budget/);await click({action:'actual-delete',id:purchase.id});assert.equal(state().actualExpenses.length,0);await click({action:'undo'});assert.equal(state().actualExpenses.length,1);
 await click({action:'actual-new'});submit({title:'Blumen',amount:'12',date:currentMonth()+'-14',category:'__new',newCategory:'Mein Garten'});assert.ok(state().categories.find(c=>c.name==='Mein Garten'));assert.equal(state().actualExpenses.length,2);await click({action:'delete-category',id:state().categories.find(c=>c.name==='Mein Garten').id});assert.match(get('#form-error').textContent,/noch von Posten verwendet/);
@@ -176,15 +176,16 @@ assert.ok(r.plannedSaving>0,'Testmonat hat Sparraten');assert.equal(cash-r.fixed
 await click({action:'month-cash'});const sheet=get('#dialog').innerHTML;assert.match(sheet,/Schon bezahlt und ausgegeben/);assert.match(sheet,/Sparen, gleich mit dem Gehalt/);assert.doesNotMatch(sheet,/Sparen am Monatsende/);assert.ok(sheet.includes(new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(cash/100)));await click({action:'close'});
 await click({action:'next'});assert.doesNotMatch(page(),/Auf dem Konto, geschätzt/);await click({action:'prev'});
 await click({view:'savings'});const pot=state().pots.find(p=>p.name==='Urlaub');const sumOf=()=>rs(state(),currentMonth()).pots.find(p=>p.id===pot.id);
-assert.match(page(),/Stand im /);assert.match(page(),/rcard-end/);assert.match(page(),/sv-info/);
+assert.match(page(),/Anfang /);assert.match(page(),/rcard-end/);assert.match(page(),/sv-info/);
 const startIn=sumOf().opening;await click({action:'sv-deposit',pot:pot.id});submit({amount:'50',month:currentMonth()});
 await click({action:'sv-rate',pot:pot.id});submit({mode:'rate',rate:'20',start:currentMonth()});
 const p1=sumOf();assert.equal(p1.balance,startIn+5000+2000,'Monatsende enthält Einzahlung und Rate');
 const fmt=v=>new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(v/100);
 assert.ok(page().includes(fmt(startIn+5000+2000)),'Stand im Monat enthält Einzahlung und die Rate dieses Monats (kam mit dem Gehalt Ende Vormonat)');
 assert.ok(page().includes('Ende '+fmt(startIn+5000+2000+2000)),'Monatsende enthält zusätzlich die Rate des Folgemonats');
-await click({action:'savings-pot',id:pot.id});assert.match(get('#dialog').innerHTML,/Ende /);assert.match(get('#dialog').innerHTML,/im /);await click({action:'close'});
-await click({action:'next'});assert.match(page(),/Stand im /);assert.match(page(),/rcard-end/);await click({action:'prev'});
+await click({action:'savings-pot',id:pot.id});assert.match(get('#dialog').innerHTML,/Ende /);assert.match(get('#dialog').innerHTML,/Anfang /);await click({action:'close'});
+await click({action:'next'});assert.match(page(),/Anfang /);assert.match(page(),/rcard-end/);await click({action:'prev'});
+await click({view:'plan'});assert.match(page(),/geht Ende [A-Za-zä]+ vom Gehalt ab/);await click({view:'savings'});
 }
 console.log('PASS: estimated account balance with breakdown (current month only); savings: in-month balance includes this plan month\'s rates (paid from the salary at the end of the previous month), end-of-month adds next month\'s rates.');
 process.exit(0);

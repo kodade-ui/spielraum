@@ -1,7 +1,7 @@
 // Bereich „Monat“ (ab 3.0): Monatsplan und tatsächliche Ausgaben in einer Ansicht.
 // Rechnet ausschließlich über vorhandene Fachfunktionen (reconcileMonth, recordPlannedExpense,
 // saveActual, saveEntryClassification). Keine eigene Geldlogik außer Summen für die Anzeige.
-import {euro,amountText,monthName,currentMonth,totals,projected,money,validDate,legacyAnnual} from './planner.js';
+import {euro,amountText,monthName,currentMonth,shiftMonth,totals,projected,money,validDate,legacyAnnual} from './planner.js';
 import {reconcileMonth,recordPlannedExpense,saveEntryClassification} from './reconciliation.js';
 import {saveActual} from './actuals.js';
 import {planChanges} from './budget-insights.js';
@@ -76,7 +76,10 @@ export function createMonthUI(ctx){
 
   function planRow(i){
     const pot=S().pots.find(p=>p.id===i.potId),income=i.type==='income';
-    const sub=[pot?(income?'aus ':'in ')+pot.name:'',dayOf(i)?'am '+dayOf(i)+'.':'',rhythm(i)].filter(Boolean).join(' · ');
+    // Ab 3.5.4: Bei Sparraten steht dabei, von welchem Gehalt sie abgehen (Gehalt Ende Vormonat = Geld für diesen Monat).
+    const prevShort=new Intl.DateTimeFormat('de-DE',{month:'long'}).format(new Date(shiftMonth(M(),-1)+'-01T12:00:00'));
+    const when=i.type==='saving'&&i.frequency!=='once'?'geht Ende '+prevShort+' vom Gehalt ab':'';
+    const sub=[pot?(income?'aus ':'in ')+pot.name:'',when,dayOf(i)?'am '+dayOf(i)+'.':'',rhythm(i)].filter(Boolean).join(' · ');
     return `<li class="row is-plain"><span class="dot-mark" style="--c:${themeColor(pot?.color||cat(i.category)?.color||'#5f8f80')}"></span><button class="row-main" data-action="edit-item" data-id="${i.id}"><span class="row-title">${esc(i.title)}</span>${sub?`<span class="row-sub">${esc(sub)}</span>`:''}</button><span class="row-amount ${income?'is-positive':''}">${income?'+':''}${euro(i.monthlyAmount)}</span></li>`;
   }
 
