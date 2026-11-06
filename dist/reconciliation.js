@@ -3,7 +3,8 @@ import {uid,validate,validDate,money,projected,totals,shiftMonth,validMonth,reso
 import {suggestCategory,paceFor} from './intelligence.js';
 import {makeJournal,undoJournal} from './scenarios.js';
 export const merchantKey=s=>String(s||'').normalize('NFKC').toLocaleLowerCase('de').replace(/\s+/g,' ').trim().slice(0,160);
-export function recordPlannedExpense(state,id,month,{amount,date,complete=false}){
+// title (optional, ab 3.6): eigene Bezeichnung der Ausgabe, z. B. „Wochenmarkt“; leer = Name des Planpostens.
+export function recordPlannedExpense(state,id,month,{amount,date,complete=false,title=''}){
   if((state.monthClosures||[]).some(c=>c.month===month))throw Error('Dieser Monat ist abgeschlossen. Bitte den Abschluss zuerst zurücknehmen.');
   const item=reconcileMonth(state,month).links.find(i=>i.id===id);
   if(!item)throw Error('Dieser Ausgabenposten ist im ausgewählten Monat nicht mehr aktiv.');
@@ -12,7 +13,7 @@ export function recordPlannedExpense(state,id,month,{amount,date,complete=false}
   if(!Number.isSafeInteger(value)||value<=0||value>100000000000)throw Error(complete?'Der Planbetrag ist bereits vollständig erfasst.':'Bitte einen Betrag größer als null eingeben.');
   const n=structuredClone(state);
   n.actualExpenses??=[];
-  n.actualExpenses.push({id:uid(),title:item.title,amount:value,date,category:item.category,note:'',kind:'expense',direction:'out',planItemId:item.id,planGroupId:item.groupId||item.id});
+  n.actualExpenses.push({id:uid(),title:String(title||'').trim().slice(0,160)||item.title,amount:value,date,category:item.category,note:'',kind:'expense',direction:'out',planItemId:item.id,planGroupId:item.groupId||item.id});
   return validate(n);
 }
 export function fingerprint(value){
