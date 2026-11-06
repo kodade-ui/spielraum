@@ -3,7 +3,7 @@
 // Rechnet nur über Fachfunktionen: reserveSummary, goalProgress, reconcileMonth, goals.js (Raten) und sinking.js.
 import {euro,amountText,monthName,shiftMonth,currentMonth,totals,projected,money,fieldMoney,validMonth} from './planner.js';
 import {reserveSummary} from './reserves.js';
-import {goalProgress,monthsBetween,potRate,planRate,applyRate,addDeposit,ensureGoalPot,createGoal,saveGoal,withoutRates} from './goals.js';
+import {goalProgress,monthsBetween,potRate,planRate,applyRate,addDeposit,ensureGoalPot,createGoal,saveGoal,withoutRates,rateMonths,skipRate,resumeRate} from './goals.js';
 import {reconcileMonth} from './reconciliation.js';
 import {sinkingCandidates,sinkingOptions,applySinking,sinkingStatus} from './sinking.js';
 
@@ -126,7 +126,7 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
     const mv=i=>i.type==='saving'?'Einzahlung':'Entnahme';
     return `<details class="sheet-more"><summary>Verlauf und Bestände</summary><div class="figures four"><div><span>Anfang</span><b>${euro(p.opening)}</b></div><div><span>Ein</span><b>${p.deposits?'+':''}${euro(p.deposits)}</b></div><div><span>Aus</span><b>${p.withdrawals?'−':''}${euro(p.withdrawals)}</b></div><div><span>Ende</span><b class="${p.balance<0?'is-negative':''}">${euro(p.balance)}</b></div></div><h3 class="sheet-h">Im ${esc(monthName(m))}</h3>${p.movements.length?`<ul class="rows compact">${p.movements.map(i=>`<li class="row is-plain"><button class="row-main" data-action="edit-item" data-id="${i.id}"><span class="row-title">${esc(i.title)}</span><span class="row-sub">${mv(i)}</span></button><span class="row-amount">${i.type==='saving'?'+':'−'}${euro(i.monthlyAmount)}</span></li>`).join('')}</ul>`:'<p class="helper">Keine Bewegung in diesem Monat.</p>'}${future.length?`<h3 class="sheet-h">Später</h3><ul class="rows compact">${future.map(i=>`<li class="row is-plain"><button class="row-main" data-action="edit-item" data-id="${i.id}"><span class="row-title">${esc(i.title)}</span><span class="row-sub">${mv(i)} ab ${esc(short(i.start))}</span></button><span class="row-amount">${i.type==='saving'?'+':'−'}${euro(i.amount)}</span></li>`).join('')}</ul>`:''}<h3 class="sheet-h">Eingetragene Bestände</h3><ul class="rows compact">${[...raw.checkpoints].sort((a,b)=>b.month.localeCompare(a.month)).map(c=>`<li class="row is-plain"><span class="row-main"><span class="row-title">Anfang ${esc(monthName(c.month))}</span></span><span class="row-amount">${euro(c.balance)}</span>${raw.checkpoints.length>1?`<button class="iconbtn" data-action="pot-remove-checkpoint" data-id="${id}" data-month="${c.month}" aria-label="Bestand Anfang ${esc(monthName(c.month))} entfernen">${icon('trash')}</button>`:''}</li>`).join('')}</ul></details>`;
   }
-  const rateLine=r=>r?`Feste Rate: <b>${whole(r.amount)}</b> im Monat${r.running?'':' ab '+esc(short(r.start))}${r.end?' bis '+esc(short(r.end)):''}.`:'';
+  const rateLine=r=>r?`Feste Rate: <b>${whole(r.amount)}</b> im Monat${r.running?'':' ab '+esc(short(r.start))}${r.end?' bis '+esc(short(r.end)):''}.${r.skipped?` Ende ${esc(monthOnly(M()))} ausgesetzt.`:''}`:'';
 
   function goalSheet(id){
     const g=getGoal(id),i=goalInfo(g),m=M(),free=freeIn(S(),m),lines=[];
@@ -140,7 +140,7 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
       lines.push(`Im ${esc(monthOnly(m))} sind noch <b class="${free<0?'is-negative':''}">${euro(free)}</b> frei${i.rate?.running?', die Rate ist schon abgezogen':''}.`);
     }
     const actionsHTML=i.kind==='done'?`<div class="sheet-actions"><button class="btn btn-primary" data-action="goal-done" data-id="${g.id}">${icon('check')}Ziel abschließen</button></div>`:`<div class="sheet-actions"><button class="btn btn-primary" data-action="sv-deposit" data-goal="${g.id}">${icon('plus')}Einzahlen</button><button class="btn btn-outline" data-action="sv-rate" data-goal="${g.id}">${icon('repeat')}${i.rate?'Rate ändern':'Feste Rate'}</button></div>`;
-    ctx.openDialog(esc(g.title),`<div class="sheet-body"><div class="sv-top">${ring(i.pct,84,i.kind==='done')}<div><p class="sv-big">${euro(i.balance)}</p><p class="sv-of">${esc(whenLabel())} · von ${euro(g.price)}${g.deadline?' · bis '+esc(short(g.deadline)):''}</p><p class="sv-of">Ende ${esc(monthOnly(m))}: ${euro(i.end)}</p>${g.price-i.balance>0?`<p class="sv-missing">Es fehlen ${euro(g.price-i.balance)}</p>`:''}</div></div><div class="sv-text">${lines.map(l=>`<p>${l}</p>`).join('')}</div>${actionsHTML}<div class="sheet-links"><button class="textbtn" data-action="sv-correct" data-goal="${g.id}">Bestand anpassen</button><button class="textbtn" data-action="goal-edit" data-id="${g.id}">Bearbeiten</button>${i.kind!=='done'?`<button class="textbtn" data-action="goal-done" data-id="${g.id}">Ziel abschließen</button>`:''}</div>${g.potId?history(g.potId):''}</div>`);
+    ctx.openDialog(esc(g.title),`<div class="sheet-body"><div class="sv-top">${ring(i.pct,84,i.kind==='done')}<div><p class="sv-big">${euro(i.balance)}</p><p class="sv-of">${esc(whenLabel())} · von ${euro(g.price)}${g.deadline?' · bis '+esc(short(g.deadline)):''}</p><p class="sv-of">Ende ${esc(monthOnly(m))}: ${euro(i.end)}</p>${g.price-i.balance>0?`<p class="sv-missing">Es fehlen ${euro(g.price-i.balance)}</p>`:''}</div></div><div class="sv-text">${lines.map(l=>`<p>${l}</p>`).join('')}</div>${actionsHTML}<div class="sheet-links">${i.rate&&g.potId?`<button class="textbtn" data-action="sv-skip" data-pot="${g.potId}">Einen Monat aussetzen</button>`:''}<button class="textbtn" data-action="sv-correct" data-goal="${g.id}">Bestand anpassen</button><button class="textbtn" data-action="goal-edit" data-id="${g.id}">Bearbeiten</button>${i.kind!=='done'?`<button class="textbtn" data-action="goal-done" data-id="${g.id}">Ziel abschließen</button>`:''}</div>${g.potId?history(g.potId):''}</div>`);
   }
   function potSheet(id){
     const g=goalOfPot(id);
@@ -154,13 +154,13 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
     }
     if(i.rate)lines.push(rateLine(i.rate));
     else if(!i.sink)lines.push(p.checkpoint?'Keine feste Rate. Zahle ein, wann es passt.':`Startet im ${esc(monthName(p.checkpoints[0].month))}.`);
-    ctx.openDialog(esc(p.name),`<div class="sheet-body"><div class="sv-top">${i.target?ring(i.pct,84):badge(i.sink?'calendar':'jar',84)}<div><p class="sv-big ${p.balance<0?'is-negative':''}">${euro(p.balance)}</p><p class="sv-of">${esc(whenLabel())}</p><p class="sv-of">Ende ${esc(monthOnly(m))}: ${euro(p.end)}</p></div></div><div class="sv-text">${lines.map(l=>`<p>${l}</p>`).join('')}</div><div class="sheet-actions"><button class="btn btn-primary" data-action="sv-deposit" data-pot="${id}">${icon('plus')}Einzahlen</button><button class="btn btn-outline" data-action="sv-rate" data-pot="${id}">${icon('repeat')}${i.rate?'Rate ändern':'Feste Rate'}</button></div><div class="sheet-links"><button class="textbtn" data-action="pot-correct" data-id="${id}">Bestand anpassen</button><button class="textbtn" data-action="pot-withdraw" data-id="${id}">Entnahme einplanen</button><button class="textbtn" data-action="pot-edit" data-id="${id}">Bearbeiten</button>${i.sink?'':`<button class="textbtn" data-action="goal-new" data-pot="${id}">Ziel setzen</button>`}</div>${history(id)}</div>`);
+    ctx.openDialog(esc(p.name),`<div class="sheet-body"><div class="sv-top">${i.target?ring(i.pct,84):badge(i.sink?'calendar':'jar',84)}<div><p class="sv-big ${p.balance<0?'is-negative':''}">${euro(p.balance)}</p><p class="sv-of">${esc(whenLabel())}</p><p class="sv-of">Ende ${esc(monthOnly(m))}: ${euro(p.end)}</p></div></div><div class="sv-text">${lines.map(l=>`<p>${l}</p>`).join('')}</div><div class="sheet-actions"><button class="btn btn-primary" data-action="sv-deposit" data-pot="${id}">${icon('plus')}Einzahlen</button><button class="btn btn-outline" data-action="sv-rate" data-pot="${id}">${icon('repeat')}${i.rate?'Rate ändern':'Feste Rate'}</button></div><div class="sheet-links">${i.rate?`<button class="textbtn" data-action="sv-skip" data-pot="${id}">Einen Monat aussetzen</button>`:''}<button class="textbtn" data-action="pot-correct" data-id="${id}">Bestand anpassen</button><button class="textbtn" data-action="pot-withdraw" data-id="${id}">Entnahme einplanen</button><button class="textbtn" data-action="pot-edit" data-id="${id}">Bearbeiten</button>${i.sink?'':`<button class="textbtn" data-action="goal-new" data-pot="${id}">Ziel setzen</button>`}</div>${history(id)}</div>`);
   }
 
   // ---- Dialoge: Einzahlen, Rate, neues Ziel ----
   // Nutzersicht: Man wählt den Monat, dessen Budget die Rate zum ersten Mal belastet. Gespeichert wird der Vormonat,
   // weil die Rate Ende des Vormonats vom Gehalt dieses Budgets abgeht (Wert der Auswahl = Postenmonat).
-  const monthOptions=name=>{const a=firstMonth();return `<select name="${name}">${Array.from({length:12},(_,k)=>shiftMonth(a,k)).map((x,k)=>`<option value="${x}" ${k?'':'selected'}>${esc(short(shiftMonth(x,1)))} · Überweisung Ende ${esc(monthOnly(x))}</option>`).join('')}</select>`};
+  const monthOptions=name=>{const a=firstMonth();return `<select name="${name}">${Array.from({length:12},(_,k)=>shiftMonth(a,k)).map((x,k)=>`<option value="${x}" ${k?'':'selected'}>${esc(monthName(shiftMonth(x,1)))}</option>`).join('')}</select>`};
   const footer=label=>`<div class="form-footer"><button type="button" class="btn btn-outline" data-action="close">Abbrechen</button><button type="submit" class="btn btn-primary">${label}</button></div>`;
 
   function deposit(el){
@@ -250,6 +250,7 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
   function preview(form){
     const out=document.querySelector('#sv-preview');
     if(!form||!out)return;
+    if(live.kind==='skip'){skipPreview(form);return}
     if(live.kind==='deposit'){
       const amount=readMoney(field(form,'amount')),month=field(form,'month');
       if(!validMonth(month)||Number.isNaN(amount)){out.innerHTML='';return}
@@ -262,7 +263,7 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
     if(c.mode==='flex'){out.innerHTML='Du zahlst ein, wann es passt. Am Ziel siehst Du, was bis zum Termin im Monat nötig wäre.';return}
     if(c.error){out.innerHTML=field(form,'rate')||field(form,'price')?`<span class="is-negative">${esc(c.error)}</span>`:'';return}
     if(c.plan.done){out.innerHTML='Schon gedeckt, keine Rate nötig.';return}
-    const span=!c.plan.end?`ab ${esc(monthName(c.start))}`:c.plan.months>1?`${esc(short(c.start))} bis ${esc(short(c.plan.end))}, ${c.plan.months} Raten`:`einmal im ${esc(monthName(c.start))}`;
+    const span=!c.plan.end?`erste Überweisung Ende ${esc(monthName(c.start))}`:c.plan.months>1?`Überweisungen Ende ${esc(short(c.start))} bis Ende ${esc(short(c.plan.end))}, ${c.plan.months} Raten`:`einmal, Ende ${esc(monthName(c.start))}`;
     out.innerHTML=`<b>${whole(c.rate)}</b> im Monat · ${span}.<br>${costText(live.goalId?(S().goals.find(x=>x.id===live.goalId)?.potId||''):live.potId,c.start,c.rate,c.plan.end)}`;
   }
 
@@ -319,6 +320,33 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
     if(!cands.length)return close();
     ctx.openDialog('Jahreskosten glätten',`<div class="sheet-body"><p class="bodycopy">Diese Zahlungen kommen nicht jeden Monat und reißen dann ein Loch. Mit einer Rücklage legst Du jeden Monat einen Teil zurück; im Zahlungsmonat kommt das Geld aus dem Topf.</p><ul class="rows compact spaced">${cands.map(c=>`<li class="row is-plain"><span class="row-main"><span class="row-title">${esc(c.item.title)}</span><span class="row-sub">${euro(c.amount)} ${c.interval===3?'alle 3 Monate':'im Jahr'}, nächste im ${esc(monthName(c.next))}</span></span><button class="btn btn-outline small" data-action="sinking-start" data-key="${c.key}">${whole(c.monthly)} / Monat</button></li>`).join('')}</ul><details class="sheet-more"><summary>Vorschläge ausblenden</summary><div class="sheet-links">${cands.map(c=>`<button class="textbtn" data-action="sinking-dismiss" data-key="${c.key}">${esc(c.item.title)} nicht mehr vorschlagen</button>`).join('')}</div></details></div>`);
   }
+  // Ab 3.7: Feste Rate einen Monat aussetzen. Gewählt wird der Budget-Monat; gespeichert der Postenmonat (Vormonat), wie bei „Belastet das Budget ab“.
+  function skipDialog(el){
+    const potId=el.dataset.pot,pot=getPot(potId),g=goalOfPot(potId),list=rateMonths(S(),potId,firstMonth(),12),revision=S().revision;
+    if(!list.length)throw Error('Für diesen Topf läuft keine feste Rate.');
+    const open=list.filter(x=>!x.skipped),paused=list.filter(x=>x.skipped);
+    const opt=x=>`<option value="${x.month}">${esc(short(shiftMonth(x.month,1)))} · ${whole(x.amount)}</option>`;
+    const pausedHTML=paused.length?`<h3 class="sheet-h">Ausgesetzt</h3><ul class="rows compact">${paused.map(x=>`<li class="row is-plain"><span class="row-main"><span class="row-title">${esc(monthName(shiftMonth(x.month,1)))}</span><span class="row-sub">keine Überweisung Ende ${esc(monthOnly(x.month))}</span></span><button type="button" class="textbtn" data-action="sv-resume" data-pot="${potId}" data-month="${x.month}">Wieder aufnehmen</button></li>`).join('')}</ul>`:'';
+    live={kind:'skip',goalId:g?.id||'',potId};
+    ctx.openDialog('Rate aussetzen',`<form id="sv-skip-form" data-live data-pot="${potId}"><p class="bodycopy">${esc(g?g.title:pot.name)}</p>${open.length?`<label class="spaced"><span>Dieses Budget nicht belasten</span><select name="month">${open.map(opt).join('')}</select></label><p class="sv-preview" id="sv-preview" aria-live="polite"></p><p class="helper">Die Rate läuft danach normal weiter. Änderst Du die Rate später ab einem früheren Monat, ist das Aussetzen aufgehoben.</p>`:'<p class="helper">Alle Monate der nächsten zwölf sind schon ausgesetzt.</p>'}${pausedHTML}${open.length?footer('Aussetzen'):''}</form>`,form=>{
+      if(S().revision!==revision)throw Error('Der Stand hat sich geändert. Bitte erneut öffnen.');
+      const m=field(form,'month');
+      if(!validMonth(m))throw Error('Bitte einen Monat wählen.');
+      if(ctx.commitUndo(skipRate(S(),potId,m),`Rate für ${monthName(shiftMonth(m,1))} ausgesetzt`))close();
+    });
+    preview(document.querySelector('#dialog form'));
+  }
+  function skipPreview(form){
+    const out=document.querySelector('#sv-preview'),m=field(form,'month');
+    if(!out||!validMonth(m))return;
+    const n=skipRate(S(),live.potId,m),b=shiftMonth(m,1),g=live.goalId?S().goals.find(x=>x.id===live.goalId):null;
+    let text=`Die Überweisung Ende ${esc(monthOnly(m))} entfällt. Im ${esc(monthName(b))} sind dann <b>${euro(freeIn(n,b))}</b> frei statt ${euro(freeIn(S(),b))}.`;
+    if(g?.deadline&&g.potId){
+      const at=reserveSummary(n,g.deadline).pots.find(p=>p.id===g.potId)?.balance||0;
+      if(at<g.price)text+=` <span class="is-negative">Bis ${esc(short(g.deadline))} fehlen dann ${euro(g.price-at)}.</span> Du kannst später einmal mehr einzahlen oder die Rate anpassen.`;
+    }
+    out.innerHTML=text;
+  }
   function sinkingStart(el){
     const now=currentMonth(),c=sinkingCandidates(S(),now).find(x=>x.key===el.dataset.key);
     if(!c)throw Error('Für diese Zahlung gibt es schon eine Rücklage.');
@@ -350,6 +378,8 @@ ${done.length?`<details class="journal"><summary>Erreichte Ziele <span>${done.le
     'sv-correct':correct,
     'sinking-open':sinkingList,
     'sinking-start':sinkingStart,
+    'sv-skip':skipDialog,
+    'sv-resume':el=>{const {pot,month}=el.dataset;if(ctx.commitUndo(resumeRate(S(),pot,month),`Rate für ${monthName(shiftMonth(month,1))} läuft wieder`))close()},
     'sinking-dismiss':sinkingDismiss
   };
   return {render,actions,preview};

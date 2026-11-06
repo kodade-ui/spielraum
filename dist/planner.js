@@ -108,6 +108,8 @@ export function validate(s) {
     const w=s.settings.wishPlan;
     if(!obj(w)||!amount(w.monthly)||w.monthly>100000000||!Array.isArray(w.order)||w.order.length>1000||w.order.some(x=>!id(x)))fail();
   }
+  // Ab 3.7: Rest vor dem Gehalt für den Kontostand-Abgleich (Cent, darf negativ sein).
+  if(s.settings.accountBase!==undefined&&!(Number.isSafeInteger(s.settings.accountBase)&&Math.abs(s.settings.accountBase)<=100000000000))fail();
   if(s.settings.sinkingDismissed!==undefined&&(!Array.isArray(s.settings.sinkingDismissed)||s.settings.sinkingDismissed.length>1000||s.settings.sinkingDismissed.some(x=>!id(x))))fail();
   if(s.settings.assignments){
     if(!obj(s.settings.assignments)||Object.keys(s.settings.assignments).length>100000)fail();

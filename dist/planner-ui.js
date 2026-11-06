@@ -22,7 +22,7 @@ const reserveUI=createReserveUI({get state(){return state},get month(){return mo
 const actualUI=createActualUI({get state(){return state},get month(){return month},setMonth:m=>{month=m},esc,icon,btn:(...args)=>btn(...args),openDialog,persist,commitUndo,download,render});
 const goalUI=createGoalUI({get state(){return state},get month(){return month},esc,icon,btn:(...a)=>btn(...a),openDialog,persist,commitUndo,confirmDialog,itemDialog,render,showPot:id=>savingsUI.actions['savings-pot']({dataset:{id}})});
 const reconciliationUI=createReconciliationUI({get state(){return state},get month(){return month},esc,icon,btn:(...a)=>btn(...a),openDialog,persist,commitUndo,confirmDialog,render});
-const monthUI=createMonthUI({get state(){return state},get month(){return month},esc,icon,openDialog,commitUndo,itemDialog:(...a)=>itemDialog(...a),closeDialog:()=>{$('#dialog').close();editContext=null},deleteItem:id=>deletePost(id)});
+const monthUI=createMonthUI({get state(){return state},get month(){return month},esc,icon,openDialog,commitUndo,persist,itemDialog:(...a)=>itemDialog(...a),closeDialog:()=>{$('#dialog').close();editContext=null},deleteItem:id=>deletePost(id)});
 const savingsUI=createSavingsUI({get state(){return state},get month(){return month},esc,icon,openDialog,commitUndo,persist,closeDialog:()=>{$('#dialog').close();editContext=null},correctPot:id=>reserveUI.actions['pot-correct']({dataset:{id}})});
 const yearUI=createYearUI({get state(){return state},get month(){return month},esc,icon,render,openMonth:m=>{
   if(!validMonth(m))return;
@@ -339,7 +339,7 @@ function applyTheme(t){
   for(const meta of document.querySelectorAll('meta[name="theme-color"]'))meta.setAttribute('content',t==='auto'?(meta.getAttribute('media')?.includes('dark')?THEME_COLORS.dark:THEME_COLORS.light):THEME_COLORS[t]);
 }
 function settingsDialog(){
-  openDialog('Daten & Backup',`<div class="settings-section"><h3>Dein Plan bleibt auf diesem Gerät</h3><p>Deine Posten werden lokal gespeichert. Ein anderer Browser oder ein neues Handy hat einen eigenen Stand. Die App sendet Deine eingegebenen Finanzdaten nicht an einen Server oder eine KI.</p></div><div class="settings-section"><h3>Backup & Wiederherstellung</h3><p>${state.settings.lastBackup?'Letztes Backup: '+new Date(state.settings.lastBackup).toLocaleDateString('de-DE')+'.':'Noch kein Backup exportiert.'} Sichere regelmäßig eine Datei. Beim Löschen von Website-Daten oder bei Geräteverlust können lokale Daten verloren gehen.</p><div class="inline">${btn('Backup speichern','backup','dark','download')}${btn('Wiederherstellen','import','outline',null)}</div>${loadError?'<button class="textbtn danger-zone" data-action="rescue">Vorhandene Rohdaten retten</button>':''}</div><div class="settings-section"><h3>Darstellung</h3><p>Hell oder dunkel gilt nur für dieses Gerät. „Automatisch“ folgt der Einstellung Deines Handys.</p><div class="seg-buttons" role="group" aria-label="Darstellung">${[['auto','Automatisch'],['light','Hell'],['dark','Dunkel']].map(([v,t])=>`<button type="button" data-action="theme" data-theme="${v}" aria-pressed="${themeChoice()===v}">${t}</button>`).join('')}</div></div><div class="settings-section"><h3>Kategorien & Farben</h3><p>Eigene Kategorien, Farben und Stichwörter. Deine manuelle Auswahl merkt sich die App für gleich benannte neue Posten.</p><div class="inline">${btn('Kategorien bearbeiten','categories','outline','edit')}${btn('Zuordnungen prüfen','review-categories','outline','spark')}</div></div><div class="settings-section"><h3>Spielraum auf dem Startbildschirm</h3><p>Öffne diese Seite in Chrome und wähle im Menü „Zum Startbildschirm hinzufügen“ oder „App installieren“.</p><div class="inline">${btn('Als App nutzen','install','outline','plus')}${btn('App neu laden','reload-app','outline','repeat')}${btn('Speicherschutz','persist-storage','outline','lock')}</div></div><div class="settings-section"><h3>Ausprobieren & exportieren</h3><div class="inline">${btn(demoMode?'Beispiel beenden':'Beispielplan ansehen','demo','outline','spark')}${btn('Posten als CSV','csv','outline','download')}${btn('Für einen Chat','analysis-export','outline','download')}</div></div><div class="settings-section"><h3>So rechnet Spielraum</h3><p>Noch frei = Einnahmen − bereits Ausgegebenes − offene Rechnungen − übrige Budgets − Sparen. Käufe innerhalb eines Budgets ändern den freien Betrag nicht, Käufe ohne Budget oder über Plan senken ihn. Alle Posten zählen sofort, unabhängig von einem Abbuchungstag. Dreimonatige Posten zählen ab dem Startmonat alle drei Monate mit dem vollen Betrag. Neue Jahresposten zählen vollständig im gewählten Zahlungsmonat, dann alle zwölf Monate. Bei älteren Jahresposten bestätigst Du zuerst den Zahlungsmonat; bis dahin bleibt der bisherige Monatsanteil erhalten. Der Bereich Jahr führt Deine bestehenden Pläne zwölf Monate fort.</p><p class="spaced">Änderst oder löschst Du einen monatlichen Posten, gilt das ab dem ausgewählten Monat. Frühere Monate bleiben erhalten.</p><p class="note">Spielraum 3.6 · Monat, Sparen & Jahr</p><button class="textbtn" data-action="update-backup">Sicherung vor diesem Update exportieren</button></div>`);
+  openDialog('Daten & Backup',`<div class="settings-section"><h3>Dein Plan bleibt auf diesem Gerät</h3><p>Deine Posten werden lokal gespeichert. Ein anderer Browser oder ein neues Handy hat einen eigenen Stand. Die App sendet Deine eingegebenen Finanzdaten nicht an einen Server oder eine KI.</p></div><div class="settings-section"><h3>Backup & Wiederherstellung</h3><p>${state.settings.lastBackup?'Letztes Backup: '+new Date(state.settings.lastBackup).toLocaleDateString('de-DE')+'.':'Noch kein Backup exportiert.'} Sichere regelmäßig eine Datei. Beim Löschen von Website-Daten oder bei Geräteverlust können lokale Daten verloren gehen.</p><div class="inline">${btn('Backup speichern','backup','dark','download')}${btn('Wiederherstellen','import','outline',null)}</div>${loadError?'<button class="textbtn danger-zone" data-action="rescue">Vorhandene Rohdaten retten</button>':''}</div><div class="settings-section"><h3>Darstellung</h3><p>Hell oder dunkel gilt nur für dieses Gerät. „Automatisch“ folgt der Einstellung Deines Handys.</p><div class="seg-buttons" role="group" aria-label="Darstellung">${[['auto','Automatisch'],['light','Hell'],['dark','Dunkel']].map(([v,t])=>`<button type="button" data-action="theme" data-theme="${v}" aria-pressed="${themeChoice()===v}">${t}</button>`).join('')}</div></div><div class="settings-section"><h3>Kategorien & Farben</h3><p>Eigene Kategorien, Farben und Stichwörter. Deine manuelle Auswahl merkt sich die App für gleich benannte neue Posten.</p><div class="inline">${btn('Kategorien bearbeiten','categories','outline','edit')}${btn('Zuordnungen prüfen','review-categories','outline','spark')}</div></div><div class="settings-section"><h3>Spielraum auf dem Startbildschirm</h3><p>Öffne diese Seite in Chrome und wähle im Menü „Zum Startbildschirm hinzufügen“ oder „App installieren“.</p><div class="inline">${btn('Als App nutzen','install','outline','plus')}${btn('App neu laden','reload-app','outline','repeat')}${btn('Speicherschutz','persist-storage','outline','lock')}</div></div><div class="settings-section"><h3>Ausprobieren & exportieren</h3><div class="inline">${btn(demoMode?'Beispiel beenden':'Beispielplan ansehen','demo','outline','spark')}${btn('Posten als CSV','csv','outline','download')}${btn('Für einen Chat','analysis-export','outline','download')}</div></div><div class="settings-section"><h3>So rechnet Spielraum</h3><p>Noch frei = Einnahmen − bereits Ausgegebenes − offene Rechnungen − übrige Budgets − Sparen. Käufe innerhalb eines Budgets ändern den freien Betrag nicht, Käufe ohne Budget oder über Plan senken ihn. Alle Posten zählen sofort, unabhängig von einem Abbuchungstag. Dreimonatige Posten zählen ab dem Startmonat alle drei Monate mit dem vollen Betrag. Neue Jahresposten zählen vollständig im gewählten Zahlungsmonat, dann alle zwölf Monate. Bei älteren Jahresposten bestätigst Du zuerst den Zahlungsmonat; bis dahin bleibt der bisherige Monatsanteil erhalten. Der Bereich Jahr führt Deine bestehenden Pläne zwölf Monate fort.</p><p class="spaced">Änderst oder löschst Du einen monatlichen Posten, gilt das ab dem ausgewählten Monat. Frühere Monate bleiben erhalten.</p><p class="note">Spielraum 3.7 · Monat, Sparen & Jahr</p><button class="textbtn" data-action="update-backup">Sicherung vor diesem Update exportieren</button></div>`);
 }
 function categoriesDialog(){
   openDialog('Deine Kategorien',`<div class="stack"><div>${state.categories.map(c=>`<div class="category-row"><span class="dot" style="background:${themeColor(c.color)}"></span><span>${esc(c.name)}</span><button data-action="edit-category" data-id="${c.id}" aria-label="${esc(c.name)} bearbeiten">${icon('edit')}</button></div>`).join('')}</div>${btn('Kategorie hinzufügen','new-category','outline','plus')}</div>`);
@@ -373,8 +373,20 @@ function backup(){
   }
   const copy=structuredClone(state);
   copy.settings.lastBackup=new Date().toISOString();
-  download(JSON.stringify(copy,null,2),`spielraum-backup-${dateStamp()}${demoMode?'-beispiel':''}.json`);
-  persist(copy,'Backup-Download gestartet. Bitte Datei aufbewahren.');
+  const json=JSON.stringify(copy,null,2),name=`spielraum-backup-${dateStamp()}${demoMode?'-beispiel':''}`;
+  // Ab 3.7: Teilen-Menü des Handys (Mail an sich selbst, Cloud-Ordner …), wohin entscheidet der Nutzer; die App sendet nichts selbst.
+  // Manche Browser teilen keine .json-Dateien, dann als .txt (Inhalt identisch, Wiederherstellen nimmt beides). Sonst Download wie bisher.
+  const file=[new File([json],name+'.json',{type:'application/json'}),new File([json],name+'.txt',{type:'text/plain'})].find(f=>{try{return navigator.canShare?.({files:[f]})}catch{return false}});
+  if(!file){
+    download(json,name+'.json');
+    persist(copy,'Backup-Download gestartet. Bitte Datei aufbewahren.');
+    return;
+  }
+  navigator.share({files:[file],title:'Spielraum-Backup'}).then(()=>persist(copy,'Backup geteilt. Bitte die Datei aufbewahren.'),e=>{
+    if(e?.name==='AbortError'){toast('Backup abgebrochen. Nichts gespeichert.');return}
+    download(json,name+'.json');
+    persist(copy,'Teilen ging nicht, Backup wird stattdessen heruntergeladen.');
+  });
 }
 function exportCSV(){
   const cell=v=>'"'+String(v).replace(/^[=+@\t\r-]/,"'").replace(/"/g,'""')+'"',rows=[['Monat','Posten','Art','Kategorie','Häufigkeit','Originalbetrag EUR','Monatlich EUR','Notiz','Rücklagentopf'],...projected(state,month).map(i=>[month,i.title,{income:'Einnahme',expense:'Ausgabe',saving:'Rücklage'}[i.type],category(i.category).name,{month:'Monatlich',quarter:'Alle 3 Monate',year:'Jährlich',once:'Einmalig'}[i.frequency],fieldMoney(i.amount),fieldMoney(i.monthlyAmount),i.note,state.pots.find(p=>p.id===i.potId)?.name||''])];
@@ -650,18 +662,28 @@ document.addEventListener('input',event=>{
     reconciliationUI.paymentPreview(event.target.closest('#plan-payment-form'));
     return;
   }
+  if(event.target.closest?.('#cash-check-form')){
+    monthUI.cashCheck(event.target.closest('#cash-check-form'));
+    return;
+  }
   if(event.target.closest('#item-form')){
     previewForm();
     return;
   }
 });
 document.addEventListener('change',async event=>{
+  if(event.target.closest?.('#cash-check-form')&&event.target.name==='base'){
+    monthUI.saveBase(event.target.closest('#cash-check-form'));
+    return;
+  }
   const live=event.target.closest?.('form[data-live]');
   if(live){
     savingsUI.preview(live);
     return;
   }
   if(event.target.closest?.('#quick-form')){
+    // Hat der Nutzer selbst ein Ziel gewählt, wählt ein bekannter Name nichts mehr um.
+    if(event.target.name==='target'&&event.target.closest('#quick-form').dataset)event.target.closest('#quick-form').dataset.named='manual';
     monthUI.quickPreview(event.target.closest('#quick-form'));
     return;
   }
