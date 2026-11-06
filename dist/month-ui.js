@@ -1,11 +1,12 @@
 // Bereich „Monat“ (ab 3.0): Monatsplan und tatsächliche Ausgaben in einer Ansicht.
 // Rechnet ausschließlich über vorhandene Fachfunktionen (reconcileMonth, recordPlannedExpense,
 // saveActual, saveEntryClassification). Keine eigene Geldlogik außer Summen für die Anzeige.
-import {euro,amountText,monthName,currentMonth,shiftMonth,totals,projected,budgetSavings,money,validDate,legacyAnnual} from './planner.js';
-import {reconcileMonth,recordPlannedExpense,saveEntryClassification} from './reconciliation.js';
+import {euro,amountText,monthName,currentMonth,shiftMonth,totals,projected,budgetSavings,money,fieldMoney,validDate,legacyAnnual} from './planner.js';
+import {reconcileMonth,recordPlannedExpense,saveEntryClassification,merchantKey} from './reconciliation.js';
 import {saveActual} from './actuals.js';
 import {planChanges} from './budget-insights.js';
 import {themeColor,planMeter} from './theme.js';
+import {datalist,targetFor,nameKey,byName} from './names.js';
 
 export function createMonthUI(ctx){
   const {esc,icon}=ctx;
@@ -40,9 +41,37 @@ export function createMonthUI(ctx){
   // Sparraten gehen beim Nutzer sofort mit dem Gehalt weg und stehen nie im Monatsbudget (ab 3.5.1).
   const cash=r=>r.availableIncome-r.plannedSaving-r.actualTotal;
   // Rechenweg: Einnahmen − Sparen − Erfasstes = Kontostand (geschätzt); minus offene Rechnungen und Rest in Budgets = Noch frei.
+  // Ab 3.7: Kontostand-Abgleich. Erwartet = Rest vor dem Gehalt + geschätzter Kontostand dieses Monats.
+  // Der Rest vor dem Gehalt wird in settings.accountBase gemerkt (steht im Backup); der echte Kontostand nicht.
+  const readCents=v=>{const t=String(v??'').trim();if(!t)return null;try{return money(t.replace(/^[−-]\s*/,''))*(/^[−-]/.test(t)?-1:1)}catch{return NaN}};
+  function checkForm(m){
+    const base=S().settings.accountBase;
+    return `<form id="cash-check-form" class="cash-check" novalidate><h3 class="sheet-h">Mit dem echten Konto vergleichen</h3><div class="form-grid"><label><span>Kontostand jetzt (€)</span><input name="real" inputmode="decimal" autocomplete="off" placeholder="0,00"></label><label><span>Rest vor dem Gehalt (€)</span><input name="base" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${Number.isSafeInteger(base)?(base<0?'-':'')+fieldMoney(Math.abs(base)):''}"></label></div><p class="helper">Rest vor dem Gehalt: was noch auf dem Konto lag, bevor das Gehalt Ende ${esc(monthOnly(shiftMonth(m,-1)))} kam. Die App merkt ihn sich, den Kontostand nicht.</p><div id="cash-check" class="cash-check-result" aria-live="polite"></div></form>`;
+  }
+  function cashCheck(form){
+    const out=document.querySelector('#cash-check');
+    if(!form||!out)return;
+    const fd=new FormData(form),real=readCents(fd.get('real')),base=readCents(fd.get('base'))??0;
+    if(real===null){out.innerHTML='';return}
+    if(Number.isNaN(real)||Number.isNaN(base)){out.innerHTML='<p class="is-negative">Bitte nur Beträge eingeben, z. B. 1.234,56.</p>';return}
+    const r=reconcileMonth(S(),M()),expected=cash(r)+base,diff=real-expected;
+    if(Math.abs(diff)<100){out.innerHTML=`<p><b>Passt.</b> Erwartet ${euro(expected)}, die Erfassung ist vollständig.</p>`;return}
+    if(diff<0){out.innerHTML=`<p>Auf dem Konto sind <b class="is-negative">${euro(-diff)} weniger</b>, als die App erwartet (${euro(expected)}). ${r.fixedOpen?'Prüfe zuerst, ob schon abgebuchte Rechnungen noch nicht abgehakt sind. Sonst fehlen meist Ausgaben in der Erfassung.':'Meist fehlen Ausgaben in der Erfassung.'}</p><button type="button" class="btn btn-outline" data-action="cash-gap" data-amount="${-diff}">${icon('plus')}${euro(-diff)} als Ausgabe erfassen</button>`;return}
+    out.innerHTML=`<p>Auf dem Konto sind <b>${euro(diff)} mehr</b>, als die App erwartet (${euro(expected)}). Mögliche Gründe: Eine abgehakte Rechnung ist noch nicht abgebucht, eine Einnahme fehlt im Plan, oder der Rest vor dem Gehalt stimmt nicht.</p>`;
+  }
+  function saveBase(form){
+    const v=readCents(new FormData(form).get('base'));
+    if(Number.isNaN(v))return;
+    const n=structuredClone(S());
+    if(v===null)delete n.settings.accountBase;
+    else n.settings.accountBase=v;
+    if(n.settings.accountBase===S().settings.accountBase)return;
+    ctx.persist(n,'Rest vor dem Gehalt gemerkt');
+  }
   function cashSheet(){
     const m=M(),r=reconcileMonth(S(),m),c=cash(r),line=(label,value,cls='')=>`<li class="${cls}"><span>${label}</span><b>${value}</b></li>`;
-    ctx.openDialog('Auf dem Konto, geschätzt',`<div class="sheet-body"><ul class="cash-table">${line('Einnahmen im '+esc(monthName(m))+(r.reserveWithdrawals?` <small>davon ${euro(r.reserveWithdrawals)} aus Töpfen</small>`:''),'+'+euro(r.availableIncome))}${line('Sparen'+(r.plannedSaving?' <small>überwiesen Ende '+esc(monthName(shiftMonth(m,-1)))+' mit dem Gehalt</small>':''),'−'+euro(r.plannedSaving))}${line('Schon bezahlt und ausgegeben','−'+euro(r.actualTotal))}${line('Auf dem Konto, geschätzt',euro(c),'is-sum'+(c<0?' is-negative':''))}<li class="cash-sub">Davon noch gebunden</li>${line('Offene Rechnungen','−'+euro(r.fixedOpen))}${line('Rest in Budgets','−'+euro(r.variableOpen))}${line('Noch frei',euro(r.afterOpen),'is-sum'+(r.afterOpen<0?' is-negative':''))}</ul><p class="helper spaced">Kein echter Kontostand, sondern gerechnet: Einnahmen des Monats minus der Sparraten, die mit diesem Gehalt überwiesen wurden, minus allem, was Du als bezahlt abgehakt oder als Kauf erfasst hast. Was Du nicht einträgst, fehlt hier. Vergleiche ab und zu mit Deinem echten Konto.</p></div>`);
+    ctx.openDialog('Auf dem Konto, geschätzt',`<div class="sheet-body"><ul class="cash-table">${line('Einnahmen im '+esc(monthName(m))+(r.reserveWithdrawals?` <small>davon ${euro(r.reserveWithdrawals)} aus Töpfen</small>`:''),'+'+euro(r.availableIncome))}${line('Sparen'+(r.plannedSaving?' <small>überwiesen Ende '+esc(monthName(shiftMonth(m,-1)))+' mit dem Gehalt</small>':''),'−'+euro(r.plannedSaving))}${line('Schon bezahlt und ausgegeben','−'+euro(r.actualTotal))}${line('Auf dem Konto, geschätzt',euro(c),'is-sum'+(c<0?' is-negative':''))}<li class="cash-sub">Davon noch gebunden</li>${line('Offene Rechnungen','−'+euro(r.fixedOpen))}${line('Rest in Budgets','−'+euro(r.variableOpen))}${line('Noch frei',euro(r.afterOpen),'is-sum'+(r.afterOpen<0?' is-negative':''))}</ul><p class="helper spaced">Kein echter Kontostand, sondern gerechnet: Einnahmen des Monats minus der Sparraten, die mit diesem Gehalt überwiesen wurden, minus allem, was Du als bezahlt abgehakt oder als Kauf erfasst hast. Was Du nicht einträgst, fehlt hier. Vergleiche ab und zu mit Deinem echten Konto.</p>${checkForm(m)}</div>`);
+    cashCheck(document.querySelector('#cash-check-form'));
   }
 
   function flow(r){
@@ -56,6 +85,20 @@ export function createMonthUI(ctx){
     return `<div class="flow" role="img" aria-label="Aufteilung von ${euro(r.availableIncome)} Einnahmen">${parts.filter(p=>p[2]>0).map(p=>`<i class="seg-${p[0]}" style="flex-grow:${(p[2]/base*1000).toFixed(1)}"></i>`).join('')}${sum<base?`<i class="seg-rest" style="flex-grow:${((base-sum)/base*1000).toFixed(1)}"></i>`:''}</div><ul class="flow-legend">${parts.map(p=>`<li><span><i class="seg-${p[0]}"></i>${p[1]}</span><b>${euro(p[2])}</b></li>`).join('')}${r.afterOpen<0?`<li class="is-negative"><span><i class="seg-minus"></i>Fehlbetrag</span><b>${euro(-r.afterOpen)}</b></li>`:''}<li class="flow-total">von ${euro(r.availableIncome)} Einnahmen${r.reserveWithdrawals?`, davon ${euro(r.reserveWithdrawals)} aus Töpfen`:''}</li></ul>`;
   }
 
+  // Ab 3.7: Rechnungen, deren Zahlungstag im laufenden Monat erreicht ist. Nicht automatisch gebucht (keine Datenänderung ohne Tipp),
+  // sondern ein Hinweis mit „Alle abhaken“. Rechnungen mit passender, noch nicht zugeordneter Ausgabe bleiben draußen (sonst doppelt).
+  function dueBills(r){
+    const m=M(),now=currentMonth();
+    if(m!==now||closed(m))return [];
+    const today=new Date().getDate();
+    return r.links.filter(i=>i.budgetKind==='fixed'&&i.open>0&&dayOf(i)&&dayOf(i)<=today&&!r.unlinked.some(x=>x.category===i.category||merchantKey(x.title)===merchantKey(i.title)));
+  }
+  function dueNotice(r){
+    const due=dueBills(r);
+    if(!due.length)return '';
+    const names=due.map(i=>esc(i.title)).join(', ');
+    return `<div class="notice due"><span>${due.length===1?'Fällig':'Fällig sind'}: ${names} (${euro(due.reduce((n,i)=>n+i.open,0))}). Schon abgebucht?</span><button class="textbtn" data-action="month-due-all">${due.length===1?'Abhaken':'Alle abhaken'}</button></div>`;
+  }
   function billRow(i){
     const done=!i.open,day=dayOf(i),bits=[];
     if(done)bits.push(i.payments.length?'bezahlt '+shortDate(i.payments.at(-1).date):'bezahlt');
@@ -110,7 +153,7 @@ export function createMonthUI(ctx){
     const all=r.expenses.slice().sort((a,b)=>b.date.localeCompare(a.date)||a.title.localeCompare(b.title,'de'));
     return `${hero(r,t)}
 ${closed(m)?'<div class="notice"><span>Dieser Monat wurde mit einer früheren Version abgeschlossen. Erfasste Beträge sind gesperrt.</span><button class="textbtn" data-action="month-reopen">Wieder öffnen</button></div>':''}
-${section('Rechnungen',r.fixedOpen?euro(r.fixedOpen)+' gehen noch ab':bills.length?'alles bezahlt':'',bills.map(billRow),addLine('new-expense','Rechnung oder Budget'))}
+${dueNotice(r)}${section('Rechnungen',r.fixedOpen?euro(r.fixedOpen)+' gehen noch ab':bills.length?'alles bezahlt':'',bills.map(billRow),addLine('new-expense','Rechnung oder Budget'))}
 ${budgets.length?section('Budgets',r.variableOpen?euro(r.variableOpen)+' übrig':'aufgebraucht',budgets.map(budgetRow),''):''}
 ${loose.length?section('Ohne Budget',euro(loose.reduce((n,x)=>n+x.amount,0)),loose.map(x=>looseRow(r,x)),linkable>1&&!closed(m)?`<button class="add-line" data-action="month-link-all">${icon('check')}Alle ${linkable} passend zuordnen</button>`:''):''}
 ${section('Sparen',savings.length?euro(r.plannedSaving)+' im Monat':'',[...savings.map(planRow),...upcoming.map(i=>planRow({...i,upcoming:true}))],(laterTotal?`<p class="helper spaced">Ende ${esc(monthOnly(m))} gehen noch ${euro(laterTotal)} in Rücklagen. Das zählt für ${esc(monthOnly(shiftMonth(m,1)))}.</p>`:'')+addLine('new-saving','Rücklage'))}
@@ -118,6 +161,14 @@ ${section('Einnahmen',incomes.length?euro(r.availableIncome):'',incomes.map(plan
 ${all.length?`<details class="journal"><summary>Alle Käufe im ${esc(monthName(m))} <span>${all.length} · ${euro(r.actualTotal)}</span></summary><ul class="rows">${all.map(x=>{const link=r.links.find(i=>i.payments.some(p=>p.id===x.id));return `<li class="row is-plain"><span class="dot-mark" style="--c:${themeColor(cat(x.category)?.color||'#8d9590')}"></span><button class="row-main" data-action="reconcile-edit" data-id="${x.id}"><span class="row-title">${esc(x.title)}</span><span class="row-sub">${esc(shortDate(x.date))} · ${link?esc(link.title):'ohne Budget'}</span></button><span class="row-amount">${euro(x.amount)}</span></li>`}).join('')}</ul></details>`:''}`;
   }
 
+  // Ab 3.7: Bei Budgets die Zahlungen nach Bezeichnung zusammengefasst, sobald es mehr als einen Namen gibt
+  // oder ein eigener Name mehrfach vorkommt. Ohne eigenen Namen zählt die Zahlung unter dem Namen des Budgets.
+  function namesBlock(i){
+    if(i.budgetKind!=='variable'||i.payments.length<2)return '';
+    const groups=byName(i.payments),own=groups.filter(g=>nameKey(g.title)!==nameKey(i.title));
+    if(!own.length||(groups.length<2&&own[0].count<2))return '';
+    return `<h3 class="sheet-h">Wofür im ${esc(monthName(M()))}</h3><ul class="rows compact name-sum">${groups.map(g=>`<li class="row is-plain"><span class="row-main"><span class="row-title">${esc(nameKey(g.title)===nameKey(i.title)?'Ohne Bezeichnung':g.title)}</span><span class="row-sub">${g.count}×</span></span><span class="row-amount">${euro(g.total)}</span></li>`).join('')}</ul>`;
+  }
   function itemSheet(id){
     const m=M(),r=reconcileMonth(S(),m),i=r.links.find(x=>x.id===id);
     if(!i){
@@ -127,7 +178,7 @@ ${all.length?`<details class="journal"><summary>Alle Käufe im ${esc(monthName(m
     }
     const c=cat(i.category),locked=closed(m);
     const meta=[c?.name,i.budgetKind==='variable'?'Budget':'Rechnung',dayOf(i)?'am '+dayOf(i)+'.':'',rhythm(i)||'monatlich'].filter(Boolean).join(' · ');
-    ctx.openDialog(esc(i.title),`<div class="sheet-body"><p class="sheet-meta">${esc(meta)}</p><div class="figures"><div><span>Geplant</span><b>${euro(i.monthlyAmount)}</b></div><div><span>Bezahlt</span><b>${euro(i.paid)}</b></div><div><span>${i.over?'Über Plan':'Offen'}</span><b class="${i.over?'is-negative':''}">${euro(i.over||i.open)}</b></div></div>${planMeter(i.paid,i.monthlyAmount)}${i.payments.length?`<h3 class="sheet-h">Zahlungen im ${esc(monthName(m))}</h3><ul class="rows compact">${i.payments.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<li class="row is-plain"><button class="row-main" data-action="reconcile-edit" data-id="${x.id}"><span class="row-title">${esc(x.title)}</span><span class="row-sub">${esc(shortDate(x.date))}</span></button><span class="row-amount">${euro(x.amount)}</span>${locked?'':`<button class="iconbtn small" data-action="month-pay-delete" data-id="${x.id}" data-plan="${i.id}" aria-label="Zahlung ${euro(x.amount)} entfernen">${icon('trash')}</button>`}</li>`).join('')}</ul>`:'<p class="helper">In diesem Monat noch nichts bezahlt.</p>'}<div class="sheet-actions">${locked?'':`<button class="btn btn-primary" data-action="plan-pay-part" data-id="${i.id}">${icon('plus')}Betrag</button>`}<button class="btn btn-outline" data-action="edit-item" data-id="${i.id}">${icon('edit')}Bearbeiten</button></div><button class="textbtn danger" data-action="month-delete" data-id="${i.id}">Posten ab ${esc(monthName(m))} entfernen</button></div>`);
+    ctx.openDialog(esc(i.title),`<div class="sheet-body"><p class="sheet-meta">${esc(meta)}</p><div class="figures"><div><span>Geplant</span><b>${euro(i.monthlyAmount)}</b></div><div><span>Bezahlt</span><b>${euro(i.paid)}</b></div><div><span>${i.over?'Über Plan':'Offen'}</span><b class="${i.over?'is-negative':''}">${euro(i.over||i.open)}</b></div></div>${planMeter(i.paid,i.monthlyAmount)}${namesBlock(i)}${i.payments.length?`<h3 class="sheet-h">Zahlungen im ${esc(monthName(m))}</h3><ul class="rows compact">${i.payments.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<li class="row is-plain"><button class="row-main" data-action="reconcile-edit" data-id="${x.id}"><span class="row-title">${esc(x.title)}</span><span class="row-sub">${esc(shortDate(x.date))}</span></button><span class="row-amount">${euro(x.amount)}</span>${locked?'':`<button class="iconbtn small" data-action="month-pay-delete" data-id="${x.id}" data-plan="${i.id}" aria-label="Zahlung ${euro(x.amount)} entfernen">${icon('trash')}</button>`}</li>`).join('')}</ul>`:'<p class="helper">In diesem Monat noch nichts bezahlt.</p>'}<div class="sheet-actions">${locked?'':`<button class="btn btn-primary" data-action="plan-pay-part" data-id="${i.id}">${icon('plus')}Betrag</button>`}<button class="btn btn-outline" data-action="edit-item" data-id="${i.id}">${icon('edit')}Bearbeiten</button></div><button class="textbtn danger" data-action="month-delete" data-id="${i.id}">Posten ab ${esc(monthName(m))} entfernen</button></div>`);
   }
 
   function targets(r){
@@ -137,11 +188,12 @@ ${all.length?`<details class="journal"><summary>Alle Käufe im ${esc(monthName(m
   }
 
   const choice=(i,preselect)=>`<label class="choice"><input type="radio" name="target" value="${i.id}" ${i.id===preselect?'checked':''}><span>${esc(i.title)}</span></label>`;
-  function quickAdd(){
+  // prefill (ab 3.7, aus dem Kontostand-Abgleich): {amount, title} und „Ohne Budget“ vorgewählt.
+  function quickAdd(prefill=null){
     const m=M();
     if(closed(m))throw Error('Dieser Monat ist abgeschlossen.');
-    const r=reconcileMonth(S(),m),{variable,fixed,preselect}=targets(r),expenseCats=S().categories.filter(c=>c.group!=='income'&&c.group!=='saving');
-    ctx.openDialog('Ausgabe erfassen',`<form id="quick-form" class="quick" novalidate><label class="quick-amount"><span class="visually-hidden">Betrag in Euro</span><input name="amount" inputmode="decimal" autocomplete="off" placeholder="0,00" required autofocus><b>€</b></label><label class="quick-title"><span>Bezeichnung (optional)</span><input name="title" maxlength="160" autocomplete="off" placeholder="z. B. Wochenmarkt"></label><fieldset class="choices"><legend>Wofür?</legend>${variable.map(i=>choice(i,preselect)).join('')}<label class="choice"><input type="radio" name="target" value="none" ${preselect==='none'?'checked':''}><span>Ohne Budget</span></label>${fixed.length?`<details class="choices-more"><summary>Offene Rechnung bezahlen</summary><div class="choices">${fixed.map(i=>choice(i,preselect)).join('')}</div></details>`:''}</fieldset><div id="quick-category" class="field" ${preselect==='none'?'':'hidden'}><label><span>Kategorie</span><select name="category">${expenseCats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></label></div><p id="quick-hint" class="quick-hint" aria-live="polite"></p><details class="more"><summary>Datum ändern</summary><div class="form-grid"><label class="full"><span>Datum</span><input name="date" type="date" value="${defaultDate(m)}" min="${m}-01" max="${m}-${String(lastDay(m)).padStart(2,'0')}"></label></div></details><div class="form-footer"><button type="submit" class="btn btn-primary wide">${icon('check')}Erfassen</button></div></form>`,form=>{
+    const r=reconcileMonth(S(),m),t0=targets(r),{variable,fixed}=t0,preselect=prefill?'none':t0.preselect,expenseCats=S().categories.filter(c=>c.group!=='income'&&c.group!=='saving');
+    ctx.openDialog('Ausgabe erfassen',`<form id="quick-form" class="quick" novalidate><label class="quick-amount"><span class="visually-hidden">Betrag in Euro</span><input name="amount" inputmode="decimal" autocomplete="off" placeholder="0,00" required autofocus value="${prefill?fieldMoney(prefill.amount):''}"><b>€</b></label><label class="quick-title"><span>Bezeichnung (optional)</span><input name="title" maxlength="160" autocomplete="off" placeholder="z. B. Wochenmarkt" list="known-names" value="${prefill?esc(prefill.title):''}"></label>${datalist(S(),esc)}<fieldset class="choices"><legend>Wofür?</legend>${variable.map(i=>choice(i,preselect)).join('')}<label class="choice"><input type="radio" name="target" value="none" ${preselect==='none'?'checked':''}><span>Ohne Budget</span></label>${fixed.length?`<details class="choices-more"><summary>Offene Rechnung bezahlen</summary><div class="choices">${fixed.map(i=>choice(i,preselect)).join('')}</div></details>`:''}</fieldset><div id="quick-category" class="field" ${preselect==='none'?'':'hidden'}><label><span>Kategorie</span><select name="category">${expenseCats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></label></div><p id="quick-hint" class="quick-hint" aria-live="polite"></p><details class="more"><summary>Datum ändern</summary><div class="form-grid"><label class="full"><span>Datum</span><input name="date" type="date" value="${defaultDate(m)}" min="${m}-01" max="${m}-${String(lastDay(m)).padStart(2,'0')}"></label></div></details><div class="form-footer"><button type="submit" class="btn btn-primary wide">${icon('check')}Erfassen</button></div></form>`,form=>{
       const fd=new FormData(form),raw=String(fd.get('amount')||'').trim(),amount=raw?money(raw):0;
       if(!(amount>0))throw Error('Bitte einen Betrag größer als 0 eingeben.');
       const target=String(fd.get('target')||'none'),date=String(fd.get('date')||defaultDate(m)),title=String(fd.get('title')||'').trim();
@@ -159,8 +211,22 @@ ${all.length?`<details class="journal"><summary>Alle Käufe im ${esc(monthName(m
     try{quickPreview(document.querySelector('#quick-form'))}catch{}
   }
 
+  // Ab 3.7: Ein bekannter Name wählt das Budget vor, in das er zuletzt gebucht wurde (einmal je Name; danach entscheidet der Nutzer).
+  function preselectByName(form){
+    const name=nameKey(new FormData(form).get('title'));
+    if(!name||!form.dataset||form.dataset.named===name||form.dataset.named==='manual')return;
+    form.dataset.named=name;
+    const hit=targetFor(S(),name,reconcileMonth(S(),M()).links);
+    if(!hit)return;
+    const radio=[...(form.querySelectorAll?.('input[name="target"]')||[])].find(x=>x.value===hit.target);
+    if(!radio)return;
+    radio.checked=true;
+    const sel=form.querySelector?.('select[name="category"]');
+    if(hit.category&&sel&&[...sel.options].some(o=>o.value===hit.category))sel.value=hit.category;
+  }
   function quickPreview(form){
     if(!form)return;
+    try{preselectByName(form)}catch{}
     const hint=document.querySelector('#quick-hint'),fd=new FormData(form),target=String(fd.get('target')||'none'),raw=String(fd.get('amount')||'').trim();
     const catBox=document.querySelector('#quick-category');
     if(catBox)catBox.hidden=target!=='none';
@@ -186,6 +252,14 @@ ${all.length?`<details class="journal"><summary>Alle Käufe im ${esc(monthName(m
 
   const actions={
     'quick-add':()=>quickAdd(),
+    'month-due-all':()=>{
+      const m=M(),due=dueBills(reconcileMonth(S(),m));
+      if(!due.length)return;
+      let n=S();
+      for(const i of due)n=recordPlannedExpense(n,i.id,m,{complete:true,date:m+'-'+String(dayOf(i)).padStart(2,'0')});
+      ctx.commitUndo(n,due.length===1?due[0].title+' abgehakt':due.length+' Rechnungen abgehakt');
+    },
+    'cash-gap':el=>{const amount=Number(el.dataset.amount);if(!Number.isSafeInteger(amount)||amount<=0)return;quickAdd({amount,title:'Nicht erfasst (Kontoabgleich)'})},
     'month-item':el=>itemSheet(el.dataset.id),
     'month-link':el=>{
       const item=S().items.find(i=>i.id===el.dataset.plan);
@@ -219,5 +293,5 @@ ${all.length?`<details class="journal"><summary>Alle Käufe im ${esc(monthName(m
       ctx.openDialog('Warum '+(c.delta>0?'mehr':'weniger')+' frei?',`<div class="sheet-body"><p class="sheet-meta">Plan ${esc(monthName(M()))} gegenüber ${esc(monthName(c.previous))}</p><ul class="rows compact">${c.changes.map(x=>`<li class="row is-plain"><button class="row-main" data-action="edit-item" data-id="${x.id}"><span class="row-title">${esc(x.title)}</span></button><span class="row-amount ${x.change>0?'is-positive':'is-negative'}">${x.change>0?'+':'−'}${euro(Math.abs(x.change))}</span></li>`).join('')}</ul></div>`);
     }
   };
-  return {render,actions,quickPreview};
+  return {render,actions,quickPreview,cashCheck,saveBase};
 }

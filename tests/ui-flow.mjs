@@ -142,7 +142,7 @@ const mill=state().goals.find(g=>g.title==='Kaffeemühle');assert.ok(mill.potId)
 const freeBefore=totals(state(),currentMonth()).remaining;await click({action:'sv-deposit',goal:mill.id});submit({amount:'100',month:currentMonth()});assert.equal(rs(state(),currentMonth()).pots.find(p=>p.id===mill.potId).balance,10000);assert.equal(totals(state(),currentMonth()).remaining,freeBefore-10000);assert.match(get('#toast').innerHTML,/Rückgängig/);
 await click({action:'sv-deposit',goal:mill.id});submit({amount:'50',month:shift(currentMonth(),1)});assert.equal(rs(state(),shift(currentMonth(),1)).pots.find(p=>p.id===mill.potId).balance,15000);await click({action:'undo'});assert.equal(rs(state(),shift(currentMonth(),1)).pots.find(p=>p.id===mill.potId).balance,10000);
 await click({action:'goal-new'});submit({title:'Rundreise',price:'2500',saved:'1000',mode:'rate',rate:'150',start:currentMonth(),note:''});const trip=state().goals.find(g=>g.title==='Rundreise');assert.equal(rs(state(),currentMonth()).pots.find(p=>p.id===trip.potId).balance,115000);assert.equal(trip.deadline,shift(currentMonth(),9));assert.equal(rs(state(),trip.deadline).pots.find(p=>p.id===trip.potId).balance,250000);assert.match(page(),/Rundreise/);
-await click({action:'sv-rate',goal:trip.id});assert.equal(activeForm.data.rate,'150,00');assert.match(get('#dialog').innerHTML,/Belastet das Budget ab/);assert.match(get('#dialog').innerHTML,/Überweisung Ende [A-Za-zä]+/);assert.equal((get('#dialog').innerHTML.match(/<option /g)||[]).length,12,'zwölf Budget-Monate zur Auswahl');submit({mode:'rate',rate:'250',start:shift(currentMonth(),1)});const tripRates=state().items.filter(i=>i.potId===trip.potId&&i.frequency==='month');assert.equal(totals(state(),currentMonth()).items.find(i=>i.potId===trip.potId).monthlyAmount,15000);assert.equal(totals(state(),shift(currentMonth(),1)).items.find(i=>i.potId===trip.potId).monthlyAmount,25000);assert.ok(tripRates.length>=2);
+await click({action:'sv-rate',goal:trip.id});assert.equal(activeForm.data.rate,'150,00');assert.match(get('#dialog').innerHTML,/Belastet das Budget ab/);assert.equal((get('#dialog').innerHTML.match(/<option /g)||[]).length,12,'zwölf Budget-Monate zur Auswahl');submit({mode:'rate',rate:'250',start:shift(currentMonth(),1)});const tripRates=state().items.filter(i=>i.potId===trip.potId&&i.frequency==='month');assert.equal(totals(state(),currentMonth()).items.find(i=>i.potId===trip.potId).monthlyAmount,15000);assert.equal(totals(state(),shift(currentMonth(),1)).items.find(i=>i.potId===trip.potId).monthlyAmount,25000);assert.ok(tripRates.length>=2);
 await click({action:'sv-rate',goal:trip.id});submit({mode:'none',start:shift(currentMonth(),1)});assert.ok(!totals(state(),shift(currentMonth(),1)).items.some(i=>i.potId===trip.potId));assert.ok(totals(state(),currentMonth()).items.some(i=>i.potId===trip.potId));await click({action:'undo'});
 await click({action:'new-expense'});await click({frequency:'year'});submit({title:'Kfz-Versicherung',amount:'600',annualMonth:shift(currentMonth(),5)});await click({view:'savings'});assert.match(page(),/Jahreskosten glätten/);
 await click({action:'sinking-open'});assert.match(get('#dialog').innerHTML,/Kfz-Versicherung/);const ins=state().items.find(i=>i.title==='Kfz-Versicherung');const dueBefore=totals(state(),shift(currentMonth(),5)).remaining;
@@ -190,4 +190,46 @@ await click({action:'next'});assert.match(page(),/Anfang /);assert.match(page(),
 await click({view:'plan'});assert.match(page(),/Ende [A-Za-zä]+ gehen noch [^<]+ in Rücklagen\. Das zählt für [A-Za-zä]+/);await click({action:'next'});assert.match(page(),/Überweisung Ende [A-Za-zä]+/);await click({action:'prev'});await click({view:'savings'});
 }
 console.log('PASS: estimated account balance with breakdown (current month only); savings: Anfang = start plus one-off deposits, Ende = plus the month\'s fixed rates; fixed rates burden the following month\'s budget.');
+// 3.7: Backup über Teilen, Namensvorschläge, Budget nach Bezeichnung, Kontostand-Abgleich, Rate aussetzen, fällige Rechnungen.
+{
+const {reconcileMonth}=await import('../dist/reconciliation.js');const {currentMonth:cm,shiftMonth:sm}=await import('../dist/planner.js');
+await click({view:'plan'});
+// Backup: Teilen-Menü, wenn der Browser Dateien teilen kann; sonst Download wie bisher.
+const realNav=Object.getOwnPropertyDescriptor(globalThis,'navigator');let shared=null;
+Object.defineProperty(globalThis,'navigator',{configurable:true,value:{canShare:({files})=>files[0].name.endsWith('.txt'),share:async d=>{shared=d}}});
+const beforeBackup=state().settings.lastBackup;await click({action:'backup'});await new Promise(r=>setTimeout(r,0));
+assert.ok(shared&&shared.files[0].name.endsWith('.txt'),'JSON nicht teilbar: als .txt geteilt');assert.notEqual(state().settings.lastBackup,beforeBackup);
+JSON.parse(await shared.files[0].text());
+Object.defineProperty(globalThis,'navigator',{configurable:true,value:{canShare:()=>true,share:async()=>{throw Object.assign(Error('x'),{name:'AbortError'})}}});
+const stamp=state().settings.lastBackup;await click({action:'backup'});await new Promise(r=>setTimeout(r,0));assert.equal(state().settings.lastBackup,stamp,'Abbruch speichert nichts');
+if(realNav)Object.defineProperty(globalThis,'navigator',realNav);
+// Namensvorschläge und Auswertung je Budget.
+await click({action:'new-expense'});submit({title:'Testbudget',amount:'300',pace:'spread',paymentDay:''});const budget=reconcileMonth(state(),cm()).links.find(i=>i.title==='Testbudget');assert.equal(budget.budgetKind,'variable');
+await click({action:'quick-add'});submit({amount:'3',target:budget.id,title:'Eisdiele',date:cm()+'-02'});
+await click({action:'quick-add'});submit({amount:'4',target:budget.id,title:'Eisdiele',date:cm()+'-02'});
+await click({action:'quick-add'});assert.match(get('#dialog').innerHTML,/<datalist id="known-names">[^]*value="Eisdiele"/);await click({action:'close'});
+await click({action:'plan-pay-part',id:budget.id});assert.match(get('#dialog').innerHTML,/list="known-names"/);await click({action:'close'});
+await click({action:'month-item',id:budget.id});assert.match(get('#dialog').innerHTML,/Wofür im/);assert.match(get('#dialog').innerHTML,/Eisdiele<\/span><span class="row-sub">2×/);await click({action:'close'});
+// Kontostand-Abgleich: Differenz, Rest vor dem Gehalt wird gemerkt, Lücke als Ausgabe erfassen.
+await click({action:'month-cash'});assert.match(get('#dialog').innerHTML,/Mit dem echten Konto vergleichen/);
+const r0=reconcileMonth(state(),cm()),est=r0.availableIncome-r0.plannedSaving-r0.actualTotal;
+const {createMonthUI}=await import('../dist/month-ui.js');
+activeForm.data.real=((est+20000-5000)/100).toFixed(2).replace('.',',');activeForm.data.base='200,00';listeners.input({target:{closest:q=>q==='#cash-check-form'?activeForm:null,name:'real'}});
+assert.match(get('#cash-check').innerHTML,/50,00\s€ weniger/);assert.match(get('#cash-check').innerHTML,/data-action="cash-gap" data-amount="5000"/);
+await listeners.change({target:{closest:q=>q==='#cash-check-form'?activeForm:null,name:'base'}});assert.equal(state().settings.accountBase,20000);
+activeForm.data.real=((est+20000)/100).toFixed(2).replace('.',',');listeners.input({target:{closest:q=>q==='#cash-check-form'?activeForm:null,name:'real'}});assert.match(get('#cash-check').innerHTML,/Passt/);
+await click({action:'cash-gap',amount:'5000'});assert.equal(activeForm.data.amount,'50,00');assert.match(activeForm.data.title,/Kontoabgleich/);await click({action:'close'});
+// Fällige Rechnung: Hinweis, ein Tipp hakt ab (mit Rückgängig), Datum = Zahlungstag.
+await click({action:'new-expense'});submit({title:'Testmiete',amount:'700',pace:'fixed',paymentDay:'1'});
+assert.match(page(),/Fällig[^<]*Testmiete/);const before=state().actualExpenses.length;
+await click({action:'month-due-all'});const paid=state().actualExpenses.slice(before).find(x=>x.title==='Testmiete');assert.ok(paid);assert.equal(paid.date,cm()+'-01');assert.doesNotMatch(page(),/Fällig[^<]*Testmiete/);
+await click({action:'undo'});assert.match(page(),/Fällig[^<]*Testmiete/);
+// Rate aussetzen: Budget des Folgemonats frei, Wieder aufnehmen.
+await click({view:'savings'});const pot=state().pots.find(p=>state().items.some(i=>i.potId===p.id&&i.type==='saving'&&i.frequency==='month'&&!i.end));
+await click({action:'savings-pot',id:pot.id});assert.match(get('#dialog').innerHTML,/data-action="sv-skip"/);
+await click({action:'sv-skip',pot:pot.id});const skipMonth=activeForm.data.month;assert.ok(skipMonth);assert.match(get('#sv-preview').innerHTML,/frei statt/);
+const savedBefore=totals(state(),sm(skipMonth,1)).saving;submit();assert.ok(totals(state(),sm(skipMonth,1)).saving<savedBefore,'Budget im Folgemonat entlastet');
+await click({action:'sv-skip',pot:pot.id});assert.match(get('#dialog').innerHTML,/Wieder aufnehmen/);await click({action:'sv-resume',pot:pot.id,month:skipMonth});assert.equal(totals(state(),sm(skipMonth,1)).saving,savedBefore);
+}
+console.log('PASS: backup via share sheet (.txt fallback, abort saves nothing); name suggestions and per-name budget summary; balance check with remembered base and gap capture; due bills one-tap checkoff with undo; skip and resume one fixed rate.');
 process.exit(0);

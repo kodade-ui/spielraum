@@ -44,8 +44,11 @@ export function ensureGoalPot(state,goalId,month,balance=0){
 }
 // Laufende oder kommende feste Monatsrate eines Topfs (Einmalbeträge zählen nicht).
 export function potRate(state,potId,month){
-  const now=projected(state,month).find(i=>i.potId===potId&&i.type==='saving'&&i.frequency==='month');
-  if(now)return {amount:now.amount,start:now.start,end:now.end||'',id:now.id,running:true};
+  // Ab 3.7: Ein ausgesetzter Monat beendet die Rate nicht (skipped: true), sonst verschwände sie aus der Anzeige.
+  const rateIds=new Set(state.items.filter(i=>i.potId===potId&&i.type==='saving'&&i.frequency==='month').map(i=>i.id));
+  const open={...state,skips:state.skips.filter(k=>!rateIds.has(k.split('@')[0]))};
+  const now=projected(open,month).find(i=>i.potId===potId&&i.type==='saving'&&i.frequency==='month');
+  if(now)return {amount:now.amount,start:now.start,end:now.end||'',id:now.id,running:true,skipped:state.skips.includes(now.id+'@'+month)};
   const next=state.items.filter(i=>i.potId===potId&&i.type==='saving'&&i.frequency==='month'&&i.start>month).sort((a,b)=>a.start.localeCompare(b.start))[0];
   return next?{amount:next.amount,start:next.start,end:next.end||'',id:next.id,running:false}:null;
 }
@@ -103,4 +106,30 @@ export function createGoal(state,{title,price,saved=0,month,deadline='',note='',
   n=saveGoal(n,{title,price,deadline:rate?.end||deadline||'',potId,note,status:'active'});
   if(rate?.rate)n=applyRate(n,{potId,title,rate:rate.rate,start:rate.start,end:rate.end});
   return n;
+}
+// Feste Rate einen Monat aussetzen (ab 3.7) über die vorhandenen skips („Posten-ID@Monat“). Der Monat ist der Postenmonat:
+// Aussetzen im Postenmonat M heißt keine Überweisung Ende M, das Budget von M+1 ist nicht belastet. Die Rate läuft danach weiter.
+const isRate=(i,potId)=>i.potId===potId&&i.type==='saving'&&i.frequency==='month';
+// Monate mit fester Rate ab „from“, auch ausgesetzte (skipped: true).
+export function rateMonths(state,potId,from,count=12){
+  const ids=new Set(state.items.filter(i=>isRate(i,potId)).map(i=>i.id)),skip=new Set(state.skips);
+  const open={...state,skips:state.skips.filter(k=>!ids.has(k.split('@')[0]))},out=[];
+  for(let k=0;k<count;k++){
+    const m=shiftMonth(from,k),r=projected(open,m).find(i=>isRate(i,potId));
+    if(r)out.push({month:m,id:r.id,amount:r.monthlyAmount,skipped:skip.has(r.id+'@'+m)});
+  }
+  return out;
+}
+export function skipRate(state,potId,month){
+  const r=rateMonths(state,potId,month,1)[0];
+  if(!r)throw Error('In diesem Monat läuft keine feste Rate.');
+  if(r.skipped)return state;
+  const n=structuredClone(state);
+  n.skips.push(r.id+'@'+month);
+  return validate(n);
+}
+export function resumeRate(state,potId,month){
+  const ids=new Set(state.items.filter(i=>isRate(i,potId)).map(i=>i.id)),n=structuredClone(state);
+  n.skips=n.skips.filter(k=>!(k.endsWith('@'+month)&&ids.has(k.split('@')[0])));
+  return validate(n);
 }
